@@ -6,6 +6,17 @@ import mmh3
 bit_mask_length = 64
 cherry_commit_message_pattern = r"\(cherry picked from commit [a-fA-F0-9]{40}\)"
 
+
+def rotate_left(bitmask):
+    return ((bitmask << 1) & ((1 << bit_mask_length) - 1)) | (bitmask >> (bit_mask_length - 1))
+
+
+def count_same_bits(num1, num2):
+    same_bits = ~(num1 ^ num2)
+    count = bin(same_bits & ((1 << max(num1.bit_length(), num2.bit_length())) - 1)).count('1')
+    return count
+
+
 def sim_hash_weighted(hsh, weight):
     sim_hash_weighted = np.zeros(bit_mask_length)
     digit = bit_mask_length - 1
@@ -18,6 +29,7 @@ def sim_hash_weighted(hsh, weight):
         digit -= 1
     return sim_hash_weighted
 
+
 def sim_hash_sum_to_bit_mask(sim_hash_sum):
     bm = 0
     for digit in range(bit_mask_length):
@@ -26,12 +38,20 @@ def sim_hash_sum_to_bit_mask(sim_hash_sum):
             bm += 1
     return bm
 
+
 def right_strip(wdiff):
-    return [(wd[0][:-1].rstrip(), wd[1]) for wd in wdiff]
+    stripped = []
+    for wd in wdiff:
+        if wd[0] and wd[0][-1] == "\n":
+            wd = wd[0][:-1], wd[1]
+        stripped.append((wd[0].rstrip(), wd[1]))
+    return stripped
+
 
 #single lines are no great shingles, connect them to give each other context
 def mingle_shingles(wdiff, n):
-    return [("".join([wdiff[j][0] for j in range(i, i+n)]), sum([wdiff[j][1] for j in range(i, i+n)]) // n) for i in range(len(wdiff) - n + 1)]
+    return [("".join([wdiff[j][0] for j in range(i, i + n)]), sum([wdiff[j][1] for j in range(i, i + n)]) // n) for i in
+            range(len(wdiff) - n + 1)]
 
 
 class Commit:
@@ -43,8 +63,10 @@ class Commit:
         self.commit_message = None
         self.parseable = True
         self.patch_set = None
+        self.bit_mask = None
         self.parse_commit_str(commit_str, diff_marker)
 
+    #ugly parser of our git string
     def parse_commit_str(self, commit_str, diff_marker):
         commit_str = commit_str.split(diff_marker + "\n")
         if len(commit_str) != 2:
@@ -75,6 +97,7 @@ class Commit:
         self.author = author
         self.commit_message = commit_message
         self.patch_set = patch_set
+        self.bit_mask = self.get_bit_mask()
 
     # does the commit message claim it was a cherry pick?
     def claims_cherry_pick(self):
@@ -101,18 +124,19 @@ class Commit:
             for patch in self.patch_set:
                 weighted_diff += [(patch.source_file, w_filename), (patch.target_file, w_filename)]
                 for hunk in patch:
-                    header = [(",".join([str(i) for i in [hunk.source_start, hunk.source_length, hunk.target_start, hunk.target_length]]), w_hheader)]
-                    body = [(line.value, w_context) if line.is_context else (line.value, w_body) for line in hunk]
+                    header = [(",".join([str(i) for i in [hunk.source_start, hunk.source_length, hunk.target_start,
+                                                          hunk.target_length]]), w_hheader)]
+                    body = right_strip(
+                        [(line.value, w_context) if line.is_context else (line.value, w_body) for line in hunk])
                     weighted_diff += header
                     weighted_diff += body
                     weighted_diff += mingle_shingles(body, 2)
         return weighted_diff
 
+    # create a bit_mask (a signature) of a commit
     def get_bit_mask(self):
         wdiff = self.get_weighted_diff()
         #wdiff = right_strip(wdiff)
-        #for i in [2]:
-        #    wdiff += mingle_shingles(wdiff, i)
 
         sim_hash_sum = np.zeros(bit_mask_length)
         for (line, weight) in wdiff:
