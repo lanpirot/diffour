@@ -1,0 +1,72 @@
+import os
+import subprocess
+import pandas as pd
+import commit
+import time
+
+
+limit = 10000
+repo_folder = "../data/cherry_repos/"
+all_diffs = 'diffs_' + str(limit)
+
+commit_marker = "====####====####"
+diff_marker = "--- --- --- ---"
+pretty_format = commit_marker + "%n%P%n%H%n%an%n%s%b%n" + diff_marker
+command = f'git log --all --no-merges --pretty=format:"{pretty_format}" -p -U3 -n' + str(limit)
+
+
+#create a (long) string of all commits and their unified diffs
+def create_git_diffs(folder):
+    old_folder = os.getcwd()
+    os.chdir(folder)
+
+    if all_diffs in os.listdir():
+        #we found the diff file, just read it
+        with open(all_diffs, "r", encoding="utf8", errors="replace") as file:
+            os.chdir(old_folder)
+            return file.read()
+
+    #no diff file found, produce it (and save it)
+    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, encoding='utf-8', errors='replace')
+    with open(all_diffs, "w+", encoding='utf-8') as file:
+        file.write(result.stdout)
+    os.chdir(old_folder)
+    return result.stdout
+
+
+def parse_commit_diff_string(commit_diff_string):
+    diffs = []
+    for cm in commit_diff_string.split(commit_marker + "\n")[1:]:
+        diffs += [commit.Commit(cm, diff_marker)]
+    return diffs
+
+
+def find_cherries(commit_diffs):
+    print(sum([1 for cd in commit_diffs if cd.parseable]))
+    #commit_diffs[c].patch_set[f][h][l].is_context
+
+
+if __name__ == '__main__':
+    subfolders = os.walk(repo_folder).__next__()[1]
+    subfolders = [repo_folder + "/" + folder for folder in subfolders]
+
+    #subfolders = [repo_folder + "odoo"]
+    #subfolders = [repo_folder + "pydriller"]
+    df = pd.DataFrame(columns=["files", "changed_lines"])
+    for folder in subfolders:
+        print(f"Working on {folder}:")
+        #rename_scheme = get_rename_scheme(folder)
+        start_time = time.time()
+        commit_diff_string = create_git_diffs(folder)
+        end_time = time.time()
+        print(f"Execution time: {end_time - start_time} seconds")
+
+        start_time = time.time()
+        commit_diffs = parse_commit_diff_string(commit_diff_string)
+        end_time = time.time()
+        print(f"Execution time: {end_time - start_time} seconds")
+        cherry_candidates = find_cherries(commit_diffs)
+        #cherries = filter_cherries(cherry_candidates)
+        #save_cherries(cherries)
+        #break
+    pass
