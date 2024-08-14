@@ -8,12 +8,12 @@ from joblib import Parallel, delayed
 
 limit = 1000
 repo_folder = "../data/cherry_repos/"
-all_diffs = 'diffs_' + str(limit)
+diff_file = 'diffs_' + str(limit)
 
-commit_marker = "====####====####"
-diff_marker = "--- --- --- ---"
+commit_marker = "====xxx_next_commit_xxx===="
+diff_marker = "####xxx_next_diff_xxx####"
 pretty_format = commit_marker + "%n%P%n%H%n%an%n%s%b%n" + diff_marker
-command = f'git log --all --no-merges --pretty=format:"{pretty_format}" -p -U3 -n' + str(limit)
+command = f'git log --all --no-merges --date-order --pretty=format:"{pretty_format}" -p -U3 -n' + str(limit)
 
 
 #create a (long) string of all commits and their unified diffs
@@ -21,15 +21,15 @@ def create_git_diffs(folder):
     old_folder = os.getcwd()
     os.chdir(folder)
 
-    if all_diffs in os.listdir():
+    if diff_file in os.listdir():
         #we found the diff file, just read it
-        with open(all_diffs, "r", encoding="utf8", errors="replace") as file:
+        with open(diff_file, "r", encoding="utf8", errors="replace") as file:
             os.chdir(old_folder)
             return file.read()
 
     #no diff file found, produce it (and save it)
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, encoding='utf-8', errors='replace')
-    with open(all_diffs, "w+", encoding='utf-8') as file:
+    with open(diff_file, "w+", encoding='utf-8') as file:
         file.write(result.stdout)
     os.chdir(old_folder)
     return result.stdout
@@ -72,8 +72,8 @@ if __name__ == '__main__':
     small_mini = False
 
     if small_mini:
-        # subfolder = repo_folder + "odoo"
-        subfolder = repo_folder + "pydriller"
+        subfolder = repo_folder + "WebKit"
+        #subfolder = repo_folder + "pydriller"
         analyze_repo(subfolder)
     else:
         start_time = time.time()

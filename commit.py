@@ -26,6 +26,13 @@ def sim_hash_sum_to_bit_mask(sim_hash_sum):
             bm += 1
     return bm
 
+def right_strip(wdiff):
+    return [(wd[0][:-1].rstrip(), wd[1]) for wd in wdiff]
+
+#single lines are no great shingles, connect them to give each other context
+def mingle_shingles(wdiff, n):
+    return [("".join([wdiff[j][0] for j in range(i, i+n)]), sum([wdiff[j][1] for j in range(i, i+n)]) // n) for i in range(len(wdiff) - n + 1)]
+
 
 class Commit:
     def __init__(self, commit_str, diff_marker):
@@ -78,9 +85,9 @@ class Commit:
     # commit_message, 1
     # file_before, file_after 10
     # hunk_header 1
-    # context_before 1 (1, 2, 3)
+    # context_before 1
     # body, 10
-    # context_after 1 (3, 2, 1)
+    # context_after 1
     def get_weighted_diff(self):
         w_message = 1
         w_filename = 10
@@ -94,12 +101,18 @@ class Commit:
             for patch in self.patch_set:
                 weighted_diff += [(patch.source_file, w_filename), (patch.target_file, w_filename)]
                 for hunk in patch:
-                    weighted_diff += [(",".join([str(i) for i in [hunk.source_start, hunk.source_length, hunk.target_start, hunk.target_length]]), w_hheader)]
-                    weighted_diff += [(line.value, w_context) if line.is_context else (line.value, w_body) for line in hunk]
+                    header = [(",".join([str(i) for i in [hunk.source_start, hunk.source_length, hunk.target_start, hunk.target_length]]), w_hheader)]
+                    body = [(line.value, w_context) if line.is_context else (line.value, w_body) for line in hunk]
+                    weighted_diff += header
+                    weighted_diff += body
+                    weighted_diff += mingle_shingles(body, 2)
         return weighted_diff
 
     def get_bit_mask(self):
         wdiff = self.get_weighted_diff()
+        #wdiff = right_strip(wdiff)
+        #for i in [2]:
+        #    wdiff += mingle_shingles(wdiff, i)
 
         sim_hash_sum = np.zeros(bit_mask_length)
         for (line, weight) in wdiff:
