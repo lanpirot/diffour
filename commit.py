@@ -4,7 +4,15 @@ import numpy as np
 import mmh3
 
 bit_mask_length = 64
-cherry_commit_message_pattern = r"\(cherry picked from commit [a-fA-F0-9]{40}\)"
+cherry_commit_message_pattern = r"\(cherry picked from commit ([a-fA-F0-9]{40})\)"
+git_origin_pattern = r"GitOrigin-RevId: ([a-fA-F0-9]{40})"
+date_id = 0  #the cherry picks are sorted by date, we give them an ID by our processing order
+
+
+def get_date_id():
+    global date_id
+    date_id += 1
+    return date_id
 
 
 def rotate_left(bitmask):
@@ -59,11 +67,14 @@ class Commit:
         self.parent_id = None
         self.is_root = None
         self.commit_id = None
+        self.rev_id = None
+        self.claimed_cherry = None
         self.author = None
         self.commit_message = None
         self.parseable = True
         self.patch_set = None
         self.bit_mask = None
+        self.date = get_date_id()
         self.parse_commit_str(commit_str, diff_marker)
 
     #ugly parser of our git string
@@ -98,10 +109,36 @@ class Commit:
         self.commit_message = commit_message
         self.patch_set = patch_set
         self.bit_mask = self.get_bit_mask()
+        self.rev_id = self.get_rev_id()
+        self.claimed_cherry = self.get_claimed_cherry()
+
+    def has_rev_id(self):
+        return re.search(git_origin_pattern, self.commit_message)
+
+    def get_rev_id(self):
+        if not self.has_rev_id():
+            return None
+        return re.search(git_origin_pattern, self.commit_message).group(1)
 
     # does the commit message claim it was a cherry pick?
     def claims_cherry_pick(self):
         return re.search(cherry_commit_message_pattern, self.commit_message)
+
+    def get_claimed_cherry(self):
+        if not self.claims_cherry_pick():
+            return None
+        match = re.search(cherry_commit_message_pattern, self.commit_message)
+        return match.group(1)
+
+    def other_is_my_cherry(self, other_commit):
+        if self.claimed_cherry:
+            return self.claimed_cherry == other_commit.commit_id or self.claimed_cherry == other_commit.rev_id
+        return False
+
+    def get_ordered_commit_pair(self, other_commit):
+        if self.date > other_commit.date:
+            return self, other_commit
+        return other_commit, self
 
     # a list of weighted strings, the strings are mostly the diff itself
     # <string>, <weight>
