@@ -43,8 +43,9 @@ def parse_commit_diff_string(commit_diff_string):
 
 
 def find_cherries(commit_diffs):
-    print(sum([1 for cd in commit_diffs if cd.parseable]))
+    print(sum([1 for cd in commit_diffs if cd.parseable]), len(commit_diffs))
     print(sum([1 for cd in commit_diffs if cd.claims_cherry_pick()]))
+    print(sum([cd.get_bit_mask() for cd in commit_diffs]))
 
     #commit_diffs[c].patch_set[f][h][l].is_context
 
@@ -69,9 +70,11 @@ if __name__ == '__main__':
     subfolders = [repo_folder + folder for folder in subfolders]
 
     #subfolders = [repo_folder + "odoo"]
-    #subfolders = [repo_folder + "pydriller"]
+    subfolder = repo_folder + "pydriller"
+    analyze_repo(subfolder)
 
     start_time = time.time()
-    Parallel(n_jobs=-1)(delayed(analyze_repo)(repo) for repo in subfolders)
+    #Parallel(n_jobs=-1)(delayed(analyze_repo)(repo) for repo in subfolders)
+
     end_time = time.time()
     print(f"Execution time: {end_time - start_time} seconds")
