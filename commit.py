@@ -1,9 +1,12 @@
 import unidiff
+import re
 
 #is_binary_file
 #source_file
 #target_file
-#
+
+
+cherry_commit_message_pattern = r"\(cherry picked from commit [a-fA-F0-9]{40}\)"
 
 
 class Commit:
@@ -29,7 +32,7 @@ class Commit:
 
         if len(start) < 4:
             raise
-        (parent_id, commit_id, author, commit_message) = (start[0], start[1], start[2], start[3:])
+        (parent_id, commit_id, author, commit_message) = (start[0], start[1], start[2], start[3:][0])
 
         commit_diff = commit_str[1]
         if len(commit_diff) > 1 and commit_diff[-2] == commit_diff[-1] == "\n":
@@ -48,6 +51,9 @@ class Commit:
         self.author = author
         self.commit_message = commit_message
         self.patch_set = patch_set
+
+    def claims_cherry_pick(self):
+        return re.search(cherry_commit_message_pattern, self.commit_message)
 
     def get_diff_string(self):
         return self.commit_message + self.patch_set

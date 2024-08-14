@@ -3,9 +3,10 @@ import subprocess
 import pandas as pd
 import commit
 import time
+from joblib import Parallel, delayed
 
 
-limit = 10000
+limit = 100000
 repo_folder = "../data/cherry_repos/"
 all_diffs = 'diffs_' + str(limit)
 
@@ -43,30 +44,34 @@ def parse_commit_diff_string(commit_diff_string):
 
 def find_cherries(commit_diffs):
     print(sum([1 for cd in commit_diffs if cd.parseable]))
+    print(sum([1 for cd in commit_diffs if cd.claims_cherry_pick()]))
+
     #commit_diffs[c].patch_set[f][h][l].is_context
 
 
+def analyze_repo(folder):
+    print(f"Working on {folder}:")
+    # rename_scheme = get_rename_scheme(folder)
+    commit_diff_string = create_git_diffs(folder)
+
+
+    commit_diffs = parse_commit_diff_string(commit_diff_string)
+    cherry_candidates = find_cherries(commit_diffs)
+    # cherries = filter_cherries(cherry_candidates)
+    # save_cherries(cherries)
+    # break
+
+
+pass
+
 if __name__ == '__main__':
     subfolders = os.walk(repo_folder).__next__()[1]
-    subfolders = [repo_folder + "/" + folder for folder in subfolders]
+    subfolders = [repo_folder + folder for folder in subfolders]
 
     #subfolders = [repo_folder + "odoo"]
     #subfolders = [repo_folder + "pydriller"]
-    df = pd.DataFrame(columns=["files", "changed_lines"])
-    for folder in subfolders:
-        print(f"Working on {folder}:")
-        #rename_scheme = get_rename_scheme(folder)
-        start_time = time.time()
-        commit_diff_string = create_git_diffs(folder)
-        end_time = time.time()
-        print(f"Execution time: {end_time - start_time} seconds")
 
-        start_time = time.time()
-        commit_diffs = parse_commit_diff_string(commit_diff_string)
-        end_time = time.time()
-        print(f"Execution time: {end_time - start_time} seconds")
-        cherry_candidates = find_cherries(commit_diffs)
-        #cherries = filter_cherries(cherry_candidates)
-        #save_cherries(cherries)
-        #break
-    pass
+    start_time = time.time()
+    Parallel(n_jobs=-1)(delayed(analyze_repo)(repo) for repo in subfolders)
+    end_time = time.time()
+    print(f"Execution time: {end_time - start_time} seconds")
