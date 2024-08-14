@@ -1,12 +1,12 @@
 import unidiff
 import re
 import numpy as np
+import mmh3
 
 bit_mask_length = 64
 cherry_commit_message_pattern = r"\(cherry picked from commit [a-fA-F0-9]{40}\)"
 
 def sim_hash_weighted(hsh, weight):
-    print(bin(hsh))
     sim_hash_weighted = np.zeros(bit_mask_length)
     digit = bit_mask_length - 1
     while hsh and digit >= 0:
@@ -16,7 +16,6 @@ def sim_hash_weighted(hsh, weight):
             sim_hash_weighted[digit] = -weight
         hsh >>= 1
         digit -= 1
-    print(sim_hash_weighted)
     return sim_hash_weighted
 
 def sim_hash_sum_to_bit_mask(sim_hash_sum):
@@ -89,13 +88,14 @@ class Commit:
         w_context = 1
         w_body = 10
 
-        weighted_diff = [(self.commit_message, w_message)]
-        for patch in self.patch_set:
-            weighted_diff += [(patch.source_file, w_filename), (patch.target_file, w_filename)]
-            for hunk in patch:
-                weighted_diff += [(",".join([str(i) for i in [hunk.source_start, hunk.source_length, hunk.target_start, hunk.target_length]]), w_hheader)]
-                weighted_diff += [(line.value, w_context) if line.is_context else (line.value, w_body) for line in hunk]
-
+        weighted_diff = []
+        weighted_diff += [(self.commit_message, w_message)]
+        if self.parseable:
+            for patch in self.patch_set:
+                weighted_diff += [(patch.source_file, w_filename), (patch.target_file, w_filename)]
+                for hunk in patch:
+                    weighted_diff += [(",".join([str(i) for i in [hunk.source_start, hunk.source_length, hunk.target_start, hunk.target_length]]), w_hheader)]
+                    weighted_diff += [(line.value, w_context) if line.is_context else (line.value, w_body) for line in hunk]
         return weighted_diff
 
     def get_bit_mask(self):
@@ -103,8 +103,9 @@ class Commit:
 
         sim_hash_sum = np.zeros(bit_mask_length)
         for (line, weight) in wdiff:
-            hsh = hash(line)
+            #hsh = hash(line)
+            mask = (1 << bit_mask_length) - 1
+            hsh = mmh3.hash128(line) & mask
+
             sim_hash_sum += sim_hash_weighted(hsh, weight)
-
-
         return sim_hash_sum_to_bit_mask(sim_hash_sum)
