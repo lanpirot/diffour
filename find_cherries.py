@@ -11,7 +11,7 @@ import difflib
 commit_limit = 10000
 repo_folder = "../data/cherry_repos/"
 diff_file = 'diffs_' + str(commit_limit)
-tolerable_bit_diff = 4
+tolerable_bit_diff = 8
 
 commit_marker = "====xxx_next_commit_xxx===="
 diff_marker = "####xxx_next_diff_xxx####"
@@ -38,14 +38,6 @@ def create_git_diffs(folder):
     os.chdir(old_folder)
     return result.stdout
 
-
-# for (x, y) in xx:
-#     ix, iy = x.__str__().splitlines(), y.__str__().splitlines()
-#     jaccard_sim = textdistance.jaccard(ix, iy)
-#     ss += [jaccard_sim]
-#     #if 0.75 < jaccard_sim < 0.9:
-#     #    diff = difflib.unified_diff(ix, iy)
-
 def parse_commit_diff_string(commit_diff_string):
     diffs = []
     for cm in commit_diff_string.split(commit_marker + "\n")[1:]:
@@ -58,7 +50,7 @@ def get_candidate_groups(commit_diffs):
     for cd in commit_diffs:
         identical_commit_hashes[cd.bit_mask].add(cd)
 
-    candidate_commits = identical_commit_hashes.copy()
+    all_groups = identical_commit_hashes.copy()
 
     bit_masks = list(identical_commit_hashes.keys())
     #save the original bitmask
@@ -71,25 +63,25 @@ def get_candidate_groups(commit_diffs):
                 mi, ma = min(bit_masks[j][1], bit_masks[j + 1][1]), max(bit_masks[j][1], bit_masks[j + 1][1])
                 #we found the neighbors are not only neighbors, but also tolerably close (less than tolerable_bit_diff distance)
                 #add the groups of each representative to the other representative's group
-                candidate_commits[mi] = candidate_commits[mi].union(identical_commit_hashes[ma])
-                candidate_commits[ma] = candidate_commits[ma].union(identical_commit_hashes[mi])
+                all_groups[mi] = all_groups[mi].union(identical_commit_hashes[ma])
+                all_groups[ma] = all_groups[ma].union(identical_commit_hashes[mi])
 
     #remove commits without partners
-    temp_candidate_commits = {k: candidate_commits[k] for k in candidate_commits if len(candidate_commits[k]) > 1}
-    print(f"total with potential partners: {sum([len(cd) for cd in temp_candidate_commits.values()])}")
-    return candidate_commits
+    candidate_groups = {k: all_groups[k] for k in all_groups if len(all_groups[k]) > 1}
+    print(f"total with potential partners: {sum([len(cd) for cd in candidate_groups.values()])}")
+    return all_groups, candidate_groups
 
 
-def find_known_cherry_reaps(candidate_groups):
-    cherry_reaps = set()
+def find_claiming_cherry_reaps(candidate_groups):
+    claimed_cherry_reaps = set()
     for cg in candidate_groups.values():
         #find all commits that claim to pick cherr(ies)
         claimants = [c for c in cg if c.claims_cherry_pick()]
         for cp in claimants:
             (cherries, missing_cherries) = cp.get_all_cherries_in_group(cg)
             reap = cherry_reap.CherryReap(cp, cherries, missing_cherries)
-            cherry_reaps.add(reap)
-    return cherry_reaps
+            claimed_cherry_reaps.add(reap)
+    return claimed_cherry_reaps
 
 
 def analyze_repo(folder):
@@ -99,8 +91,8 @@ def analyze_repo(folder):
 
     commit_diffs = parse_commit_diff_string(commit_diff_string)
     print(f"{folder.split("/")[-1]}: commits parseable: {sum([1 for cd in commit_diffs if cd.parseable])} of: {len(commit_diffs)}, identical hash: {len(commit_diffs) - len(set([cd.get_bit_mask() for cd in commit_diffs]))}, commits, claiming cherry-pick: {sum([1 for cd in commit_diffs if cd.claims_cherry_pick()])}")
-    candidate_groups = get_candidate_groups(commit_diffs)
-    cherry_reaps = find_known_cherry_reaps(candidate_groups)
+    all_groups, candidate_groups = get_candidate_groups(commit_diffs)
+    claimed_cherry_reaps = find_claiming_cherry_reaps(all_groups)
 
     #unknown_groups = filter_by_similarity(unknown_groups)
     print()
