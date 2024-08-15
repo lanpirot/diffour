@@ -3,25 +3,21 @@ import re
 import numpy as np
 import mmh3
 
+
 bit_mask_length = 64
+all_ones = 2**bit_mask_length - 1
 cherry_commit_message_pattern = r"\(cherry picked from commit ([a-fA-F0-9]{40})\)"
 git_origin_pattern = r"GitOrigin-RevId: ([a-fA-F0-9]{40})"
 date_id = 0  #the cherry picks are sorted by date, we give them an ID by our processing order
 
 
-def get_date_id():
-    global date_id
-    date_id += 1
-    return date_id
-
-
 def rotate_left(bitmask):
-    return ((bitmask << 1) & ((1 << bit_mask_length) - 1)) | (bitmask >> (bit_mask_length - 1))
+    return ((bitmask << 1) & all_ones) | (bitmask >> (bit_mask_length - 1))
 
 
 def count_same_bits(num1, num2):
     same_bits = ~(num1 ^ num2)
-    count = bin(same_bits & ((1 << max(num1.bit_length(), num2.bit_length())) - 1)).count('1')
+    count = bin(same_bits & all_ones).count('1')
     return count
 
 
@@ -47,34 +43,42 @@ def sim_hash_sum_to_bit_mask(sim_hash_sum):
     return bm
 
 
-def right_strip(wdiff):
-    stripped = []
-    for wd in wdiff:
-        if wd[0] and wd[0][-1] == "\n":
-            wd = wd[0][:-1], wd[1]
-        stripped.append((wd[0].rstrip(), wd[1]))
-    return stripped
-
-
 #single lines are no great shingles, connect them to give each other context
 def mingle_shingles(wdiff, n):
-    return [("".join([wdiff[j][0] for j in range(i, i + n)]), sum([wdiff[j][1] for j in range(i, i + n)]) // n) for i in
-            range(len(wdiff) - n + 1)]
+    return [("".join([wdiff[j][0] for j in range(i, i + n)]), sum([wdiff[j][1] for j in range(i, i + n)]) // n) for i in range(len(wdiff) - n + 1)]
 
+#the unidiff lib cuts off the leading - and + of the hunk body
+#add it back in to not confuse "- print()" with "+ print()"
+def get_hunk_strings(hunk, w_context, w_body):
+    ret = []
+    for line in hunk:
+        l = line.value.rstrip()
+        if line.is_context:
+            ret.append((l, w_context))
+        elif line.is_added:
+            ret.append(("+"+l, w_body))
+        elif line.is_removed:
+            ret.append(("-"+l, w_body))
+        else:
+            raise
+    return ret
 
 class Commit:
     def __init__(self, commit_str, diff_marker):
+        global date_id
+        self.date = date_id
+        date_id += 1
+
         self.parent_id = None
         self.is_root = None
         self.commit_id = None
         self.rev_id = None
-        self.claimed_cherry = None
+        self.claimed_cherries = None
         self.author = None
         self.commit_message = None
         self.parseable = True
         self.patch_set = None
         self.bit_mask = None
-        self.date = get_date_id()
         self.parse_commit_str(commit_str, diff_marker)
 
     #ugly parser of our git string
@@ -110,7 +114,7 @@ class Commit:
         self.patch_set = patch_set
         self.bit_mask = self.get_bit_mask()
         self.rev_id = self.get_rev_id()
-        self.claimed_cherry = self.get_claimed_cherry()
+        self.claimed_cherries = self.get_claimed_cherries()
 
     def has_rev_id(self):
         return re.search(git_origin_pattern, self.commit_message)
@@ -124,15 +128,15 @@ class Commit:
     def claims_cherry_pick(self):
         return re.search(cherry_commit_message_pattern, self.commit_message)
 
-    def get_claimed_cherry(self):
+    def get_claimed_cherries(self):
         if not self.claims_cherry_pick():
             return None
-        match = re.search(cherry_commit_message_pattern, self.commit_message)
-        return match.group(1)
+        matches = re.findall(cherry_commit_message_pattern, self.commit_message)
+        return list(matches)
 
     def other_is_my_cherry(self, other_commit):
-        if self.claimed_cherry:
-            return self.claimed_cherry == other_commit.commit_id or self.claimed_cherry == other_commit.rev_id
+        if self.claimed_cherries:
+            return other_commit.commit_id in self.claimed_cherries or other_commit.rev_id in self.claimed_cherries
         return False
 
     def get_ordered_commit_pair(self, other_commit):
@@ -155,19 +159,20 @@ class Commit:
         w_context = 1
         w_body = 10
 
+        if not self.parseable:
+            return None
         weighted_diff = []
         weighted_diff += [(self.commit_message, w_message)]
-        if self.parseable:
-            for patch in self.patch_set:
-                weighted_diff += [(patch.source_file, w_filename), (patch.target_file, w_filename)]
-                for hunk in patch:
-                    header = [(",".join([str(i) for i in [hunk.source_start, hunk.source_length, hunk.target_start,
-                                                          hunk.target_length]]), w_hheader)]
-                    body = right_strip(
-                        [(line.value, w_context) if line.is_context else (line.value, w_body) for line in hunk])
-                    weighted_diff += header
-                    weighted_diff += body
-                    weighted_diff += mingle_shingles(body, 2)
+
+        for patch in self.patch_set:
+            weighted_diff += [(patch.source_file, w_filename), (patch.target_file, w_filename)]
+            for hunk in patch:
+                header = [(",".join([str(i) for i in [hunk.source_start, hunk.source_length, hunk.target_start,
+                                                      hunk.target_length]]), w_hheader)]
+                body = get_hunk_strings(hunk, w_context, w_body)
+                weighted_diff += header
+                weighted_diff += body
+                weighted_diff += mingle_shingles(body, 2)
         return weighted_diff
 
     # create a bit_mask (a signature) of a commit

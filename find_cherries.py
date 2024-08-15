@@ -1,11 +1,12 @@
 import os
 import subprocess
-import pandas as pd
 import commit
 import time
 from joblib import Parallel, delayed
+import textdistance
+import difflib
 
-commit_limit = 1000
+commit_limit = 10000
 repo_folder = "../data/cherry_repos/"
 diff_file = 'diffs_' + str(commit_limit)
 tolerable_bit_diff = 4
@@ -36,6 +37,13 @@ def create_git_diffs(folder):
     return result.stdout
 
 
+# for (x, y) in xx:
+#     ix, iy = x.__str__().splitlines(), y.__str__().splitlines()
+#     jaccard_sim = textdistance.jaccard(ix, iy)
+#     ss += [jaccard_sim]
+#     #if 0.75 < jaccard_sim < 0.9:
+#     #    diff = difflib.unified_diff(ix, iy)
+
 def parse_commit_diff_string(commit_diff_string):
     diffs = []
     for cm in commit_diff_string.split(commit_marker + "\n")[1:]:
@@ -57,37 +65,15 @@ def find_cherry_candidates(commit_diffs):
         bit_masks = [(commit.rotate_left(bm[0]), bm[1]) for bm in bit_masks]
         bit_masks = sorted(bit_masks, key=lambda x: x[0])
         for j in range(len(bit_masks)):
-            if commit.count_same_bits(bit_masks[j][0], bit_masks[(j + 1) % len(bit_masks)][
-                0]) + tolerable_bit_diff > commit.bit_mask_length:
+            if commit.count_same_bits(bit_masks[j][0], bit_masks[(j + 1) % len(bit_masks)][0]) + tolerable_bit_diff > commit.bit_mask_length:
                 mi, ma = min(bit_masks[j][1], bit_masks[j + 1][1]), max(bit_masks[j][1], bit_masks[j + 1][1])
                 #add the bigger one (and its candidate cherries) into the smaller one's candidate cherry group
                 candidate_commits[mi] = candidate_commits[mi].union(identical_commit_hashes[ma])
 
     #remove commits without partners
     candidate_commits = {k: candidate_commits[k] for k in candidate_commits if len(candidate_commits[k]) > 1}
-    print(
-        f"total candidate commits: {sum([len(cd) for cd in candidate_commits.values()])}, of which claim to be a cherry-pick: {sum([sum([1 for c in cc if c.claims_cherry_pick()]) for cc in candidate_commits.values()])}")
-    find_cherry_partner(candidate_commits)
+    print(f"total candidate commits: {sum([len(cd) for cd in candidate_commits.values()])}, of which claim to be a cherry-pick: {sum([sum([1 for c in cc if c.claims_cherry_pick()]) for cc in candidate_commits.values()])}")
     return candidate_commits
-
-
-def find_cherry_partner(candidate_commits):
-    cherry_there, cherry_not_there = 0, 0
-    for cc in candidate_commits.values():
-        for c in cc:
-            if c.claimed_cherry:
-                cherry_found = False
-            else:
-                continue
-            for ccp in cc:
-                if ccp.commit_id == c.claimed_cherry or ccp.rev_id == c.claimed_cherry:
-                    cherry_found = True
-                    break
-            if cherry_found:
-                cherry_there += 1
-            else:
-                cherry_not_there += 1
-    print(cherry_there, cherry_not_there)
 
 
 def pairwise_cherry_candidates(candidates):
@@ -110,11 +96,11 @@ def analyze_repo(folder):
     commit_diff_string = create_git_diffs(folder)
 
     commit_diffs = parse_commit_diff_string(commit_diff_string)
-    print(
-        f"{folder.split("/")[-1]}: commits parseable: {sum([1 for cd in commit_diffs if cd.parseable])} of: {len(commit_diffs)}, identical hash: {len(commit_diffs) - len(set([cd.get_bit_mask() for cd in commit_diffs]))}, commits, claiming cherry-pick: {sum([1 for cd in commit_diffs if cd.claims_cherry_pick()])}")
+    print(f"{folder.split("/")[-1]}: commits parseable: {sum([1 for cd in commit_diffs if cd.parseable])} of: {len(commit_diffs)}, identical hash: {len(commit_diffs) - len(set([cd.get_bit_mask() for cd in commit_diffs]))}, commits, claiming cherry-pick: {sum([1 for cd in commit_diffs if cd.claims_cherry_pick()])}")
     cherry_candidates = find_cherry_candidates(commit_diffs)
     candidate_pairs, cherry_pairs = pairwise_cherry_candidates(cherry_candidates)
     pass
+    print()
     # cherries = filter_cherries(cherry_candidates)
     # save_cherries(cherries)
     # break
