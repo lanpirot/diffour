@@ -185,6 +185,22 @@ class Test(TestCase):
         self.assertEqual(c.other_is_my_cherry(c), False)
         self.assertEqual(d.other_is_my_cherry(d), False)
 
+        c.commit_id, c.rev_id, c.claimed_cherries = "c", None, ["d", "e"]
+        d.commit_id, d.rev_id, d.claimed_cherries = "d", "d", ["c"]
+        self.assertEqual(c.other_is_my_cherry(d), False)
+        self.assertEqual(d.other_is_my_cherry(c), True)
+        self.assertEqual(c.other_is_my_cherry(c), False)
+        self.assertEqual(d.other_is_my_cherry(d), False)
+
+    def test_picking_same_cherries(self):
+        assert(False)
+
+    def test_other_is_in_my_cherries(self):
+        assert(False)
+
+    def test_all_cherries_in_group(self):
+        assert(False)
+
     def test_get_ordered_commit_pair(self):
         c = self.test_commit
         d = self.test_commit2

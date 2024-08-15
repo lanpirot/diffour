@@ -1,5 +1,7 @@
 import os
 import subprocess
+
+import cherry_reap
 import commit
 import time
 from joblib import Parallel, delayed
@@ -51,7 +53,7 @@ def parse_commit_diff_string(commit_diff_string):
     return diffs
 
 
-def find_cherry_candidates(commit_diffs):
+def get_candidate_groups(commit_diffs):
     identical_commit_hashes = {cd.bit_mask: set() for cd in commit_diffs}
     for cd in commit_diffs:
         identical_commit_hashes[cd.bit_mask].add(cd)
@@ -67,27 +69,27 @@ def find_cherry_candidates(commit_diffs):
         for j in range(len(bit_masks)):
             if commit.count_same_bits(bit_masks[j][0], bit_masks[(j + 1) % len(bit_masks)][0]) + tolerable_bit_diff > commit.bit_mask_length:
                 mi, ma = min(bit_masks[j][1], bit_masks[j + 1][1]), max(bit_masks[j][1], bit_masks[j + 1][1])
-                #add the bigger one (and its candidate cherries) into the smaller one's candidate cherry group
+                #we found the neighbors are not only neighbors, but also tolerably close (less than tolerable_bit_diff distance)
+                #add the groups of each representative to the other representative's group
                 candidate_commits[mi] = candidate_commits[mi].union(identical_commit_hashes[ma])
+                candidate_commits[ma] = candidate_commits[ma].union(identical_commit_hashes[mi])
 
     #remove commits without partners
-    candidate_commits = {k: candidate_commits[k] for k in candidate_commits if len(candidate_commits[k]) > 1}
-    print(f"total candidate commits: {sum([len(cd) for cd in candidate_commits.values()])}, of which claim to be a cherry-pick: {sum([sum([1 for c in cc if c.claims_cherry_pick()]) for cc in candidate_commits.values()])}")
+    temp_candidate_commits = {k: candidate_commits[k] for k in candidate_commits if len(candidate_commits[k]) > 1}
+    print(f"total with potential partners: {sum([len(cd) for cd in temp_candidate_commits.values()])}")
     return candidate_commits
 
 
-def pairwise_cherry_candidates(candidates):
-    candidate_pairs, cherry_pairs = set(), set()
-    for cg in candidates.values():
-        candidate_group = list(cg)
-        for i in range(len(candidate_group) - 1):
-            for j in range(i + 1, len(candidate_group)):
-                mi, ma = candidate_group[i].get_ordered_commit_pair(candidate_group[j])
-                if ma.other_is_my_cherry(mi):
-                    cherry_pairs.add((mi, ma))
-                    continue
-                candidate_pairs.add((mi, ma))
-    return candidate_pairs, cherry_pairs
+def find_known_cherry_reaps(candidate_groups):
+    cherry_reaps = set()
+    for cg in candidate_groups.values():
+        #find all commits that claim to pick cherr(ies)
+        claimants = [c for c in cg if c.claims_cherry_pick()]
+        for cp in claimants:
+            (cherries, missing_cherries) = cp.get_all_cherries_in_group(cg)
+            reap = cherry_reap.CherryReap(cp, cherries, missing_cherries)
+            cherry_reaps.add(reap)
+    return cherry_reaps
 
 
 def analyze_repo(folder):
@@ -97,22 +99,21 @@ def analyze_repo(folder):
 
     commit_diffs = parse_commit_diff_string(commit_diff_string)
     print(f"{folder.split("/")[-1]}: commits parseable: {sum([1 for cd in commit_diffs if cd.parseable])} of: {len(commit_diffs)}, identical hash: {len(commit_diffs) - len(set([cd.get_bit_mask() for cd in commit_diffs]))}, commits, claiming cherry-pick: {sum([1 for cd in commit_diffs if cd.claims_cherry_pick()])}")
-    cherry_candidates = find_cherry_candidates(commit_diffs)
-    candidate_pairs, cherry_pairs = pairwise_cherry_candidates(cherry_candidates)
-    pass
+    candidate_groups = get_candidate_groups(commit_diffs)
+    cherry_reaps = find_known_cherry_reaps(candidate_groups)
+
+    #unknown_groups = filter_by_similarity(unknown_groups)
     print()
-    # cherries = filter_cherries(cherry_candidates)
     # save_cherries(cherries)
-    # break
 
 
 if __name__ == '__main__':
     subfolders = os.walk(repo_folder).__next__()[1]
     subfolders = [repo_folder + folder for folder in subfolders]
 
-    small_mini = True
+    small_sample = True
 
-    if small_mini:
+    if small_sample:
         subfolder = repo_folder + "intellij-community"
         #subfolder = repo_folder + "pydriller"
         analyze_repo(subfolder)

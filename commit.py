@@ -142,10 +142,31 @@ class Commit:
         matches = re.findall(cherry_commit_message_pattern, self.commit_message)
         return list(matches)
 
+    # this reports true, if only a single cherry is picked
     def other_is_my_cherry(self, other_commit):
-        if self.claimed_cherries:
+        if len(self.claimed_cherries) == 1:
             return other_commit.commit_id in self.claimed_cherries or other_commit.rev_id in self.claimed_cherries
         return False
+
+    def other_is_in_my_cherries(self, other_commit):
+        return other_commit.commit_id in self.claimed_cherries or other_commit.rev_id in self.claimed_cherries
+
+    def get_all_cherries_in_group(self, group):
+        group_ids = [c.commit_id for c in group] + [c.rev_id for c in group if c.has_rev_id()]
+        found_cherries = set()
+        missing_cherries = set(self.claimed_cherries)
+        for cherry in self.claimed_cherries:
+            if cherry in group_ids:
+                found_cherries.add(cherry)
+                missing_cherries.remove(cherry)
+        mini_dict = {**{c.commit_id: c for c in group}, **{c.rev_id: c for c in group if c.has_rev_id()}}
+        found_cherries = [mini_dict[c] for c in found_cherries]
+        return found_cherries, missing_cherries
+
+    def picking_same_cherries(self, other_commit):
+        if not self.claimed_cherries:
+            return False
+        return self.claimed_cherries == other_commit.claimed_cherries
 
     def get_ordered_commit_pair(self, other_commit):
         if self.date < other_commit.date:
@@ -164,7 +185,7 @@ class Commit:
         if not self.parseable:
             return None
         weighted_diff = []
-        weighted_diff += [(self.commit_message, w_message)]
+        #weighted_diff += [(self.commit_message, w_message)]
 
         for patch in self.patch_set:
             weighted_diff += [(patch.source_file, w_filename), (patch.target_file, w_filename)]

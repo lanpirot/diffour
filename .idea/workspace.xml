@@ -4,9 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="started adding tests">
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="test_commit done">
+      <change afterPath="$PROJECT_DIR$/cherry_reap.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/commit.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/find_cherries.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test_commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_commit.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -49,7 +51,7 @@
     "Python tests.Python tests for test_commit.Test.test_has_rev_id.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_init.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_mingle_shingles.executor": "Run",
-    "Python tests.Python tests for test_commit.Test.test_other_is_my_cherry.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_other_is_my_cherry.executor": "Debug",
     "Python tests.Python tests for test_commit.Test.test_parse_commit_string.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_rotate_left.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_setup.executor": "Run",
@@ -62,7 +64,7 @@
     "settings.editor.selected.configurable": "preferences.sourceCode"
   }
 }]]></component>
-  <component name="RunManager" selected="Python tests.Python tests for test_commit.Test">
+  <component name="RunManager" selected="Python.find_cherries">
     <configuration name="find_cherries" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
@@ -115,21 +117,6 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Python tests for test_commit.Test.test_get_ordered_commit_pair" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
-      <module name="diffour" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_commit.Test.test_get_ordered_commit_pair&quot;" />
-      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
-      <method v="2" />
-    </configuration>
     <configuration name="Python tests for test_commit.Test.test_get_weighted_diff" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
@@ -160,13 +147,28 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
+    <configuration name="Python tests for test_commit.Test.test_other_is_my_cherry" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="diffour" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_commit.Test.test_other_is_my_cherry&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python tests.Python tests for test_commit.Test.test_other_is_my_cherry" />
         <item itemvalue="Python tests.Python tests for test_commit.Test" />
         <item itemvalue="Python tests.Python tests for test_commit.Test.test_get_bit_mask" />
         <item itemvalue="Python tests.Python tests for test_commit.Test.test_get_weighted_diff" />
         <item itemvalue="Python tests.Python tests for test_commit.Test.test_init" />
-        <item itemvalue="Python tests.Python tests for test_commit.Test.test_get_ordered_commit_pair" />
       </list>
     </recent_temporary>
   </component>
@@ -250,7 +252,15 @@
       <option name="project" value="LOCAL" />
       <updated>1723714097101</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="test_commit done">
+      <option name="closed" value="true" />
+      <created>1723729401091</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1723729401091</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -273,19 +283,20 @@
     <MESSAGE value="cherry_candidates found, now (identical + close candidates)" />
     <MESSAGE value="sort into cherry pairs and candidate pairs" />
     <MESSAGE value="started adding tests" />
-    <option name="LAST_COMMIT_MESSAGE" value="started adding tests" />
+    <MESSAGE value="test_commit done" />
+    <option name="LAST_COMMIT_MESSAGE" value="test_commit done" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/find_cherries.py</url>
-          <line>116</line>
+          <line>117</line>
           <option name="timeStamp" value="66" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/find_cherries.py</url>
-          <line>102</line>
+          <line>105</line>
           <option name="timeStamp" value="69" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -297,11 +308,6 @@
           <url>file://$PROJECT_DIR$/commit.py</url>
           <line>96</line>
           <option name="timeStamp" value="82" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/commit.py</url>
-          <line>56</line>
-          <option name="timeStamp" value="99" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
