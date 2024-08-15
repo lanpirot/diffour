@@ -68,7 +68,6 @@ def get_candidate_groups(commit_diffs):
 
     #remove commits without partners
     candidate_groups = {k: all_groups[k] for k in all_groups if len(all_groups[k]) > 1}
-    print(f"total with potential partners: {sum([len(cd) for cd in candidate_groups.values()])}")
     return all_groups, candidate_groups
 
 
@@ -90,11 +89,13 @@ def analyze_repo(folder):
     commit_diff_string = create_git_diffs(folder)
 
     commit_diffs = parse_commit_diff_string(commit_diff_string)
-    print(f"{folder.split("/")[-1]}: commits parseable: {sum([1 for cd in commit_diffs if cd.parseable])} of: {len(commit_diffs)}, identical hash: {len(commit_diffs) - len(set([cd.get_bit_mask() for cd in commit_diffs]))}, commits, claiming cherry-pick: {sum([1 for cd in commit_diffs if cd.claims_cherry_pick()])}")
+    print(f"{folder.split("/")[-1]}: commits parseable: {sum([1 for cd in commit_diffs if cd.parseable])} of: {len(commit_diffs)}, identical hash: {len(commit_diffs) - len(set([cd.get_bit_mask() for cd in commit_diffs if cd.parseable]))}, commits, claiming cherry-pick: {sum([1 for cd in commit_diffs if cd.claims_cherry_pick()])}")
     all_groups, candidate_groups = get_candidate_groups(commit_diffs)
+
+    print(f"{folder.split("/")[-1]}: total with potential partners: {sum([len(cd) for cd in candidate_groups.values()])}")
     claimed_cherry_reaps = find_claiming_cherry_reaps(all_groups)
 
-    #unknown_groups = filter_by_similarity(unknown_groups)
+    #unknown_groups = filter_by_similarity(all_groups) #filter out cherry reapers, filter completely different pairs (collisions)
     print()
     # save_cherries(cherries)
 
@@ -103,7 +104,7 @@ if __name__ == '__main__':
     subfolders = os.walk(repo_folder).__next__()[1]
     subfolders = [repo_folder + folder for folder in subfolders]
 
-    small_sample = True
+    small_sample = False
 
     if small_sample:
         subfolder = repo_folder + "intellij-community"

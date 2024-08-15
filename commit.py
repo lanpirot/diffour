@@ -108,6 +108,8 @@ class Commit:
             commit_diff = commit_diff[:-1]
         try:
             patch_set = unidiff.PatchSet(commit_diff)
+            if len(patch_set) == 0:
+                raise unidiff.UnidiffParseError
         except unidiff.UnidiffParseError as e:
             self.parseable = False
             patch_set = None
@@ -120,7 +122,8 @@ class Commit:
         self.author = author
         self.commit_message = commit_message
         self.patch_set = patch_set
-        self.bit_mask = self.get_bit_mask()
+        if self.parseable:
+            self.bit_mask = self.get_bit_mask()
         self.rev_id = self.get_rev_id()
         self.claimed_cherries = self.get_claimed_cherries()
 
