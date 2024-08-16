@@ -1,15 +1,22 @@
+import textdistance
 import unidiff
 import re
 import numpy as np
 import mmh3
+from collections import namedtuple
 
 
 bit_mask_length = 64
 all_ones = 2**bit_mask_length - 1
 cherry_commit_message_pattern = r"\(cherry picked from commit ([a-fA-F0-9]{40})\)"
 git_origin_pattern = r"GitOrigin-RevId: ([a-fA-F0-9]{40})"
+max_levenshtein_string_length = 10 ** 4
 
 
+#we remove the index line of a patch-diff (it states the hashsum of a file, which is okay to differ)
+#we also limit the maximal string length to avoid system crashes, and get some speed
+def clean_patch_string(commit):
+    return '\n'.join(line for line in commit.patch_set.__str__()[:max_levenshtein_string_length].splitlines() if not line.startswith("index "))
 
 def rotate_left(bitmask):
     return ((bitmask << 1) & all_ones) | (bitmask >> (bit_mask_length - 1))
@@ -88,6 +95,27 @@ class Commit:
         self.patch_set = None
         self.bit_mask = None
         self.parse_commit_str(commit_str, diff_marker)
+        self.neighbor_connections = []
+
+
+    def similarity_to(self, neighbor):
+        if not self.parseable or not neighbor.parseable:
+            return np.nan
+        else:
+            patch_string1, patch_string2 = clean_patch_string(self), clean_patch_string(neighbor)
+            return textdistance.levenshtein.normalized_similarity(patch_string1, patch_string2)
+
+    def add_neighbor(self, neighbor_commit):
+        #we don't need to add a neighbor twice
+        if neighbor_commit.commit_id in [c.neighbor.commit_id for c in self.neighbor_connections]:
+            return
+        candidate_neighbor = namedtuple('candidate_neighbor', ['neighbor', 'bit_sim', 'levenshtein_sim', 'claimed_cherry_connection'])
+
+        bit_sim = count_same_bits(self.bit_mask, neighbor_commit.bit_mask) / bit_mask_length
+
+
+        neighbor_connection = candidate_neighbor(neighbor=neighbor_commit, bit_sim=bit_sim, levenshtein_sim=self.similarity_to(neighbor_commit), claimed_cherry_connection=self.other_is_in_my_cherries(neighbor_commit) or neighbor_commit.other_is_in_my_cherries(self) or self.picking_same_cherries(neighbor_commit))
+        self.neighbor_connections.append(neighbor_connection)
 
     #ugly parser of our git string
     def parse_commit_str(self, commit_str, diff_marker):
@@ -145,12 +173,6 @@ class Commit:
         matches = re.findall(cherry_commit_message_pattern, self.commit_message)
         return list(matches)
 
-    # this reports true, if only a single cherry is picked
-    def other_is_my_cherry(self, other_commit):
-        if len(self.claimed_cherries) == 1:
-            return other_commit.commit_id in self.claimed_cherries or other_commit.rev_id in self.claimed_cherries
-        return False
-
     def other_is_in_my_cherries(self, other_commit):
         return other_commit.commit_id in self.claimed_cherries or other_commit.rev_id in self.claimed_cherries
 
@@ -167,7 +189,7 @@ class Commit:
         return found_cherries, missing_cherries
 
     def picking_same_cherries(self, other_commit):
-        if not self.claimed_cherries:
+        if not self.claimed_cherries or not other_commit.claimed_cherries:
             return False
         return self.claimed_cherries == other_commit.claimed_cherries
 

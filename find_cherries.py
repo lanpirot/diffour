@@ -4,14 +4,13 @@ import subprocess
 import cherry_reap
 import commit
 import time
-from joblib import Parallel, delayed
-import textdistance
-import difflib
+from joblib import Parallel, delayed, parallel_backend
 
-commit_limit = 10000
+commit_limit = 100
 repo_folder = "../data/cherry_repos/"
 diff_file = 'diffs_' + str(commit_limit)
-tolerable_bit_diff = 8
+tolerable_bit_diff = 4
+min_levenshtein_similarity = 0.8
 
 commit_marker = "====xxx_next_commit_xxx===="
 diff_marker = "####xxx_next_diff_xxx####"
@@ -38,6 +37,7 @@ def create_git_diffs(folder):
     os.chdir(old_folder)
     return result.stdout
 
+
 def parse_commit_diff_string(commit_diff_string):
     diffs = []
     for cm in commit_diff_string.split(commit_marker + "\n")[1:]:
@@ -59,7 +59,7 @@ def get_candidate_groups(commit_diffs):
         bit_masks = [(commit.rotate_left(bm[0]), bm[1]) for bm in bit_masks]
         bit_masks = sorted(bit_masks, key=lambda x: x[0])
         for j in range(len(bit_masks)):
-            if commit.count_same_bits(bit_masks[j][0], bit_masks[(j + 1) % len(bit_masks)][0]) + tolerable_bit_diff > commit.bit_mask_length:
+            if commit.count_same_bits(bit_masks[j][0], bit_masks[(j + 1) % len(bit_masks)][0]) + tolerable_bit_diff >= commit.bit_mask_length:
                 mi, ma = min(bit_masks[j][1], bit_masks[j + 1][1]), max(bit_masks[j][1], bit_masks[j + 1][1])
                 #we found the neighbors are not only neighbors, but also tolerably close (less than tolerable_bit_diff distance)
                 #add the groups of each representative to the other representative's group
@@ -68,7 +68,7 @@ def get_candidate_groups(commit_diffs):
 
     #remove commits without partners
     candidate_groups = {k: all_groups[k] for k in all_groups if len(all_groups[k]) > 1}
-    return all_groups, candidate_groups
+    return candidate_groups
 
 
 def find_claiming_cherry_reaps(candidate_groups):
@@ -83,21 +83,70 @@ def find_claiming_cherry_reaps(candidate_groups):
     return claimed_cherry_reaps
 
 
+def commit_id_to_commit(commits):
+    return {c.commit_id: c for c in commits}
+
+
+def add_close_levenshteins_to_graph(candidate_groups, c_id_to_c):
+    for cg in candidate_groups.values():
+        lcg = list(cg)
+        for i in range(len(lcg) - 1):
+            for j in range(i + 1, len(lcg)):
+                mi, ma = lcg[i].get_ordered_commit_pair(lcg[j])
+                if mi.similarity_to(ma) >= min_levenshtein_similarity:
+                    mi.add_neighbor(ma)
+                    ma.add_neighbor(mi)
+
+
+def add_known_cherry_picks_to_graph(commit_diffs, c_id_to_c):
+    for cd in commit_diffs:
+        if cd.claims_cherry_pick():
+            for cherry_id in cd.get_claimed_cherries():
+                if cherry_id in c_id_to_c:
+                    cherry = c_id_to_c[cherry_id]
+                    cd.add_neighbor(cherry)
+                    cherry.add_neighbor(cd)
+
+def remove_single_commits(commit_diffs):
+    cds = []
+    for cd in commit_diffs:
+        if cd.neighbor_connections:
+            cds.append(cd)
+    return cds
+
+def how_many_connections_are_known(commit_diffs, folder):
+    known, unknown = 0, 0
+    for cd in commit_diffs:
+        for nc in cd.neighbor_connections:
+            if nc.claimed_cherry_connection:
+                known += 1
+            else:
+                unknown += 1
+    known, unknown = known//2, unknown//2
+    print(f"{folder}: Known connections (cherry and reaper, or reapers pointing to same cherries): {known}, unknown connections: {unknown}")
+
 def analyze_repo(folder):
-    print(f"Working on {folder}:")
+    sh_folder = folder.split("/")[-1]
+    print(f"Working on {sh_folder} ...")
     # rename_scheme = get_rename_scheme(folder)
     commit_diff_string = create_git_diffs(folder)
-
     commit_diffs = parse_commit_diff_string(commit_diff_string)
-    print(f"{folder.split("/")[-1]}: commits parseable: {sum([1 for cd in commit_diffs if cd.parseable])} of: {len(commit_diffs)}, identical hash: {len(commit_diffs) - len(set([cd.get_bit_mask() for cd in commit_diffs if cd.parseable]))}, commits, claiming cherry-pick: {sum([1 for cd in commit_diffs if cd.claims_cherry_pick()])}")
-    all_groups, candidate_groups = get_candidate_groups(commit_diffs)
+    commit_id_to_commits = commit_id_to_commit(commit_diffs)
 
-    print(f"{folder.split("/")[-1]}: total with potential partners: {sum([len(cd) for cd in candidate_groups.values()])}")
-    claimed_cherry_reaps = find_claiming_cherry_reaps(all_groups)
+    #remove non-parseable commits
+    parseable_diffs = [cd for cd in commit_diffs if cd.parseable]
+    print(
+        f"{sh_folder}: commits parseable: {len(parseable_diffs)} of: {len(commit_diffs)}, identical hash: {len(parseable_diffs) - len(set([cd.get_bit_mask() for cd in parseable_diffs]))}, commits, claiming cherry-pick: {sum([1 for cd in parseable_diffs if cd.claims_cherry_pick()])}")
 
-    #unknown_groups = filter_by_similarity(all_groups) #filter out cherry reapers, filter completely different pairs (collisions)
+    candidate_groups = get_candidate_groups(parseable_diffs)
+
+    add_close_levenshteins_to_graph(candidate_groups, commit_id_to_commits)
+    add_known_cherry_picks_to_graph(commit_diffs, commit_id_to_commits)
+    final_commit_diffs = remove_single_commits(commit_diffs)
+    how_many_connections_are_known(final_commit_diffs, sh_folder)
+
     print()
-    # save_cherries(cherries)
+    # save_cherries(final_commit_diffs)
 
 
 if __name__ == '__main__':
