@@ -6,12 +6,12 @@ import commit
 import time
 from joblib import Parallel, delayed, parallel_backend
 
-commit_limit = 1000
+commit_limit = 100
 repo_folder = "../data/cherry_repos/"
 save_folder = "cherry_data/"
 diff_file = 'diffs_' + str(commit_limit)
-tolerable_bit_diff = 4
-min_levenshtein_similarity = 0.8
+tolerable_bit_diff = 5
+min_levenshtein_similarity = 0.7
 
 commit_marker = "====xxx_next_commit_xxx===="
 diff_marker = "####xxx_next_diff_xxx####"
@@ -105,8 +105,10 @@ def add_known_cherry_picks_to_graph(commit_diffs, c_id_to_c):
             for cherry_id in cd.get_claimed_cherries():
                 if cherry_id in c_id_to_c:
                     cherry = c_id_to_c[cherry_id]
-                    cd.add_neighbor(cherry)
-                    cherry.add_neighbor(cd)
+                else:
+                    cherry = commit.dummy_cherry_commit(cherry_id, diff_marker)
+                cd.add_neighbor(cherry)
+                cherry.add_neighbor(cd)
 
 
 def remove_single_commits(commit_diffs):
@@ -141,8 +143,8 @@ def commits_to_csv(commits):
 
 def save_cherries(commits, project_name):
     os.makedirs(save_folder, exist_ok=True)
-    with open(save_folder + project_name + ".csv", 'w') as file:
-        file.write("reaper,cherry,bit_similarity,levenshtein_similarity,known_connection\n")
+    with open(save_folder + project_name + "_" + str(commit_limit) + ".csv", 'w') as file:
+        file.write("reaper,cherry,bit_similarity,levenshtein_similarity,known_pick\n")
         file.write(commits_to_csv(commits))
 
 
@@ -165,7 +167,7 @@ def analyze_repo(folder):
     add_known_cherry_picks_to_graph(commits, commit_id_to_commit)
     final_commits = remove_single_commits(commits)
     how_many_connections_are_known(final_commits, sh_folder)
-    #TODO: look within commit messages for words of length 40 (see githash), print those out
+    #TODO: for those without known connection: look within commit messages for words of length 40 (see githash), print those out
     save_cherries(final_commits, sh_folder)
     pass
 
@@ -184,4 +186,4 @@ if __name__ == '__main__':
         start_time = time.time()
         Parallel(n_jobs=-1)(delayed(analyze_repo)(repo) for repo in subfolders)
         end_time = time.time()
-        print(f"Execution time: {end_time - start_time:.2g} seconds")
+        print(f"Execution time: {end_time - start_time:.1f} seconds")

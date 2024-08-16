@@ -4,6 +4,7 @@ import re
 import numpy as np
 import mmh3
 from collections import namedtuple
+import random
 
 bit_mask_length = 64
 all_ones = 2 ** bit_mask_length - 1
@@ -18,6 +19,8 @@ def rotate_left(bitmask):
 
 
 def count_same_bits(num1, num2):
+    if not num1 or not num2:
+        return np.nan
     same_bits = ~(num1 ^ num2)
     count = bin(same_bits & all_ones).count('1')
     return count
@@ -69,6 +72,10 @@ def get_hunk_strings(hunk, w_context, w_body, rs):
         else:
             raise
     return ret
+
+def dummy_cherry_commit(commit_id, diff_marker):
+    dummy = Commit(f"\n{commit_id}\n\n{diff_marker}\n", diff_marker)
+    return dummy
 
 
 class Commit:
@@ -134,13 +141,19 @@ class Commit:
 
     # we remove the index line of a patch-diff (it states the hashsum of a file, which is okay to differ)
     # we also limit the maximal string length to avoid system crashes, and get some speed
+    # we heuristically search the start and end only for long patches
     def clean_patch_string(self):
-        return '\n'.join(line for line in self.patch_set.__str__()[:max_levenshtein_string_length].splitlines() if not line.startswith("index "))
+        patch_string = self.patch_set.__str__()
+        if len(patch_string) > max_levenshtein_string_length:
+            patch_string = patch_string[:max_levenshtein_string_length//2] + patch_string[-max_levenshtein_string_length//2:]
+        return '\n'.join(line for line in patch_string.splitlines() if not line.startswith("index "))
 
     def similarity_to(self, neighbor):
         if not self.parseable or not neighbor.parseable:
             return np.nan
         else:
+            if len(self.patch_set.__str__())*2 < len(neighbor.patch_set.__str__()) or len(self.patch_set.__str__()) > len(neighbor.patch_set.__str__())*2:
+                return 0
             patch_string1, patch_string2 = self.clean_patch_string(), neighbor.clean_patch_string()
             return textdistance.levenshtein.normalized_similarity(patch_string1, patch_string2)
 
@@ -154,8 +167,7 @@ class Commit:
 
         neighbor_connection = candidate_neighbor(neighbor=neighbor_commit, bit_sim=bit_sim, levenshtein_sim=self.similarity_to(neighbor_commit),
                                                  claimed_cherry_connection=self.other_is_in_my_cherries(
-                                                     neighbor_commit) or neighbor_commit.other_is_in_my_cherries(self) or self.picking_same_cherries(
-                                                     neighbor_commit))
+                                                     neighbor_commit) or neighbor_commit.other_is_in_my_cherries(self))
         self.neighbor_connections.append(neighbor_connection)
 
     def has_rev_id(self):
@@ -222,6 +234,11 @@ class Commit:
 
         for patch in self.patch_set:
             weighted_diff += [(patch.source_file, w_filename), (patch.target_file, w_filename)]
+            if patch.is_binary_file:
+                # Binary file detected, we add the commit message, to compensate for us not knowing the actual file diff.
+                # This means, we hope the commit message gives us clues, what is going on in the binary files.
+                for l in self.commit_message.splitlines():
+                    weighted_diff += [(l, w_message)]
             for hunk in patch:
                 header = [(",".join([str(i) for i in [hunk.source_start, hunk.source_length, hunk.target_start, hunk.target_length]]), w_hheader)]
                 body = get_hunk_strings(hunk, w_context, w_body, self.__class__.rs)
