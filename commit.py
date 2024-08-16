@@ -204,11 +204,6 @@ class Commit:
         found_cherries = [mini_dict[c] for c in found_cherries]
         return found_cherries, missing_cherries
 
-    def picking_same_cherries(self, other_commit):
-        if not self.explicit_cherries or not other_commit.explicit_cherries:
-            return False
-        return self.explicit_cherries == other_commit.explicit_cherries
-
     def is_younger_than(self, other_commit):
         return self.date > other_commit.date
 
