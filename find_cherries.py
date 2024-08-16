@@ -6,8 +6,9 @@ import commit
 import time
 from joblib import Parallel, delayed, parallel_backend
 
-commit_limit = 100
+commit_limit = 1000
 repo_folder = "../data/cherry_repos/"
+save_folder = "cherry_data/"
 diff_file = 'diffs_' + str(commit_limit)
 tolerable_bit_diff = 4
 min_levenshtein_similarity = 0.8
@@ -83,7 +84,7 @@ def find_claiming_cherry_reaps(candidate_groups):
     return claimed_cherry_reaps
 
 
-def commit_id_to_commit(commits):
+def commit_id_to_commitf(commits):
     return {c.commit_id: c for c in commits}
 
 
@@ -107,12 +108,14 @@ def add_known_cherry_picks_to_graph(commit_diffs, c_id_to_c):
                     cd.add_neighbor(cherry)
                     cherry.add_neighbor(cd)
 
+
 def remove_single_commits(commit_diffs):
     cds = []
     for cd in commit_diffs:
         if cd.neighbor_connections:
             cds.append(cd)
     return cds
+
 
 def how_many_connections_are_known(commit_diffs, folder):
     known, unknown = 0, 0
@@ -122,31 +125,49 @@ def how_many_connections_are_known(commit_diffs, folder):
                 known += 1
             else:
                 unknown += 1
-    known, unknown = known//2, unknown//2
-    print(f"{folder}: Known connections (cherry and reaper, or reapers pointing to same cherries): {known}, unknown connections: {unknown}")
+    known, unknown = known // 2, unknown // 2
+    print(f"{folder}: Known connections (cherry and reaper, or reapers pointing to same cherries): {known}, unknown: {unknown}")
+
+
+# only save connections from younger commit to older commit (direction of picking), their similarities, whether they have a known connection
+def commits_to_csv(commits):
+    csv = ""
+    for c in commits:
+        for cn in c.neighbor_connections:
+            if c.is_younger_than(cn.neighbor):
+                csv += f"{c.commit_id},{cn.neighbor.commit_id},{cn.bit_sim},{cn.levenshtein_sim},{cn.claimed_cherry_connection}\n"
+    return csv
+
+
+def save_cherries(commits, project_name):
+    os.makedirs(save_folder, exist_ok=True)
+    with open(save_folder + project_name + ".csv", 'w') as file:
+        file.write("reaper,cherry,bit_similarity,levenshtein_similarity,known_connection\n")
+        file.write(commits_to_csv(commits))
+
 
 def analyze_repo(folder):
     sh_folder = folder.split("/")[-1]
     print(f"Working on {sh_folder} ...")
-    # rename_scheme = get_rename_scheme(folder)
+    #TODO: file_rename_scheme = get_rename_scheme(folder)
     commit_diff_string = create_git_diffs(folder)
-    commit_diffs = parse_commit_diff_string(commit_diff_string)
-    commit_id_to_commits = commit_id_to_commit(commit_diffs)
+    commits = parse_commit_diff_string(commit_diff_string)
+    commit_id_to_commit = commit_id_to_commitf(commits)
 
     #remove non-parseable commits
-    parseable_diffs = [cd for cd in commit_diffs if cd.parseable]
+    parseable_commits = [cd for cd in commits if cd.parseable]
     print(
-        f"{sh_folder}: commits parseable: {len(parseable_diffs)} of: {len(commit_diffs)}, identical hash: {len(parseable_diffs) - len(set([cd.get_bit_mask() for cd in parseable_diffs]))}, commits, claiming cherry-pick: {sum([1 for cd in parseable_diffs if cd.claims_cherry_pick()])}")
+        f"{sh_folder}: #parseable {len(parseable_commits)} of {len(commits)} commits, #reapers claimed: {sum([1 for cd in parseable_commits if cd.claims_cherry_pick()])}")
 
-    candidate_groups = get_candidate_groups(parseable_diffs)
+    candidate_groups = get_candidate_groups(parseable_commits)
 
-    add_close_levenshteins_to_graph(candidate_groups, commit_id_to_commits)
-    add_known_cherry_picks_to_graph(commit_diffs, commit_id_to_commits)
-    final_commit_diffs = remove_single_commits(commit_diffs)
-    how_many_connections_are_known(final_commit_diffs, sh_folder)
-
-    print()
-    # save_cherries(final_commit_diffs)
+    add_close_levenshteins_to_graph(candidate_groups, commit_id_to_commit)
+    add_known_cherry_picks_to_graph(commits, commit_id_to_commit)
+    final_commits = remove_single_commits(commits)
+    how_many_connections_are_known(final_commits, sh_folder)
+    #TODO: look within commit messages for words of length 40 (see githash), print those out
+    save_cherries(final_commits, sh_folder)
+    pass
 
 
 if __name__ == '__main__':
@@ -163,4 +184,4 @@ if __name__ == '__main__':
         start_time = time.time()
         Parallel(n_jobs=-1)(delayed(analyze_repo)(repo) for repo in subfolders)
         end_time = time.time()
-        print(f"Execution time: {end_time - start_time} seconds")
+        print(f"Execution time: {end_time - start_time:.2g} seconds")
