@@ -74,7 +74,7 @@ def get_hunk_strings(hunk, w_context, w_body, rs):
     return ret
 
 def dummy_cherry_commit(commit_id, diff_marker):
-    dummy = Commit(f"\n{commit_id}\n\n{diff_marker}\n", diff_marker)
+    dummy = Commit(f"\n{commit_id}\n!!Dummy Commit!!\n{diff_marker}\n", diff_marker)
     return dummy
 
 
@@ -92,7 +92,7 @@ class Commit:
         self.is_root = None
         self.commit_id = None
         self.rev_id = None
-        self.claimed_cherries = None
+        self.explicit_cherries = None
         self.author = None
         self.commit_message = None
         self.parseable = True
@@ -137,7 +137,7 @@ class Commit:
         if self.parseable:
             self.bit_mask = self.get_bit_mask()
         self.rev_id = self.get_rev_id()
-        self.claimed_cherries = self.get_claimed_cherries()
+        self.explicit_cherries = self.get_explicit_cherrypicks()
 
     # we remove the index line of a patch-diff (it states the hashsum of a file, which is okay to differ)
     # we also limit the maximal string length to avoid system crashes, and get some speed
@@ -161,12 +161,12 @@ class Commit:
         #we don't need to add a neighbor twice
         if neighbor_commit.commit_id in [c.neighbor.commit_id for c in self.neighbor_connections]:
             return
-        candidate_neighbor = namedtuple('candidate_neighbor', ['neighbor', 'bit_sim', 'levenshtein_sim', 'claimed_cherry_connection'])
+        candidate_neighbor = namedtuple('candidate_neighbor', ['neighbor', 'bit_sim', 'levenshtein_sim', 'explicit_cherrypick'])
 
         bit_sim = count_same_bits(self.bit_mask, neighbor_commit.bit_mask) / bit_mask_length
 
         neighbor_connection = candidate_neighbor(neighbor=neighbor_commit, bit_sim=bit_sim, levenshtein_sim=self.similarity_to(neighbor_commit),
-                                                 claimed_cherry_connection=self.other_is_in_my_cherries(
+                                                 explicit_cherrypick=self.other_is_in_my_cherries(
                                                      neighbor_commit) or neighbor_commit.other_is_in_my_cherries(self))
         self.neighbor_connections.append(neighbor_connection)
 
@@ -178,25 +178,25 @@ class Commit:
             return None
         return re.search(git_origin_pattern, self.commit_message).group(1)
 
-    # does the commit message claim it was a cherry pick?
-    def claims_cherry_pick(self):
+    # does the commit message claim it has a cherrypick?
+    def has_explicit_cherrypick(self):
         return re.search(cherry_commit_message_pattern, self.commit_message) is not None
 
-    def get_claimed_cherries(self):
-        if not self.claims_cherry_pick():
+    def get_explicit_cherrypicks(self):
+        if not self.has_explicit_cherrypick():
             return []
         matches = re.findall(cherry_commit_message_pattern, self.commit_message)
         flattened_matches = [value for t in matches for value in t if value]
         return flattened_matches
 
     def other_is_in_my_cherries(self, other_commit):
-        return other_commit.commit_id in self.claimed_cherries or other_commit.rev_id in self.claimed_cherries
+        return other_commit.commit_id in self.explicit_cherries or other_commit.rev_id in self.explicit_cherries
 
     def get_all_cherries_in_group(self, group):
         group_ids = [c.commit_id for c in group] + [c.rev_id for c in group if c.has_rev_id()]
         found_cherries = set()
-        missing_cherries = set(self.claimed_cherries)
-        for cherry in self.claimed_cherries:
+        missing_cherries = set(self.explicit_cherries)
+        for cherry in self.explicit_cherries:
             if cherry in group_ids:
                 found_cherries.add(cherry)
                 missing_cherries.remove(cherry)
@@ -205,9 +205,9 @@ class Commit:
         return found_cherries, missing_cherries
 
     def picking_same_cherries(self, other_commit):
-        if not self.claimed_cherries or not other_commit.claimed_cherries:
+        if not self.explicit_cherries or not other_commit.explicit_cherries:
             return False
-        return self.claimed_cherries == other_commit.claimed_cherries
+        return self.explicit_cherries == other_commit.explicit_cherries
 
     def is_younger_than(self, other_commit):
         return self.date > other_commit.date

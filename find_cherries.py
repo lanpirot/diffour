@@ -72,16 +72,16 @@ def get_candidate_groups(commit_diffs):
     return candidate_groups
 
 
-def find_claiming_cherry_reaps(candidate_groups):
-    claimed_cherry_reaps = set()
+def find_explicit_cherryreaps(candidate_groups):
+    explicit_cherryreaps = set()
     for cg in candidate_groups.values():
-        #find all commits that claim to pick cherr(ies)
-        claimants = [c for c in cg if c.claims_cherry_pick()]
-        for cp in claimants:
+        #find all commits with explicit cherrypicks
+        exp_cps = [c for c in cg if c.has_explicit_cherrypick()]
+        for cp in exp_cps:
             (cherries, missing_cherries) = cp.get_all_cherries_in_group(cg)
             reap = cherry_reap.CherryReap(cp, cherries, missing_cherries)
-            claimed_cherry_reaps.add(reap)
-    return claimed_cherry_reaps
+            explicit_cherryreaps.add(reap)
+    return explicit_cherryreaps
 
 
 def commit_id_to_commitf(commits):
@@ -101,8 +101,8 @@ def add_close_levenshteins_to_graph(candidate_groups, c_id_to_c):
 
 def add_known_cherry_picks_to_graph(commit_diffs, c_id_to_c):
     for cd in commit_diffs:
-        if cd.claims_cherry_pick():
-            for cherry_id in cd.get_claimed_cherries():
+        if cd.has_explicit_cherrypick():
+            for cherry_id in cd.get_explicit_cherrypicks():
                 if cherry_id in c_id_to_c:
                     cherry = c_id_to_c[cherry_id]
                 else:
@@ -123,7 +123,7 @@ def how_many_connections_are_known(commit_diffs, folder):
     known, unknown = 0, 0
     for cd in commit_diffs:
         for nc in cd.neighbor_connections:
-            if nc.claimed_cherry_connection:
+            if nc.explicit_cherrypick:
                 known += 1
             else:
                 unknown += 1
@@ -137,7 +137,7 @@ def commits_to_csv(commits):
     for c in commits:
         for cn in c.neighbor_connections:
             if c.is_younger_than(cn.neighbor):
-                csv += f"{c.commit_id},{cn.neighbor.commit_id},{cn.bit_sim},{cn.levenshtein_sim},{cn.claimed_cherry_connection}\n"
+                csv += f"{c.commit_id},{cn.neighbor.commit_id},{cn.bit_sim},{cn.levenshtein_sim},{cn.explicit_cherrypick}\n"
     return csv
 
 
@@ -159,7 +159,7 @@ def analyze_repo(folder):
     #remove non-parseable commits
     parseable_commits = [cd for cd in commits if cd.parseable]
     print(
-        f"{sh_folder}: #parseable {len(parseable_commits)} of {len(commits)} commits, #reapers claimed: {sum([1 for cd in parseable_commits if cd.claims_cherry_pick()])}")
+        f"{sh_folder}: #parseable {len(parseable_commits)} of {len(commits)} commits, #reapers identifiable by commit-message: {sum([1 for cd in parseable_commits if cd.has_explicit_cherrypick()])}")
 
     candidate_groups = get_candidate_groups(parseable_commits)
 
