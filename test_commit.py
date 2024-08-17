@@ -1,8 +1,14 @@
+import unittest
 from unittest import TestCase
 import numpy as np
 import commit
 import random
 from collections import namedtuple
+
+#coverage run .\test_commit.py
+#coverage report -m
+#coverage html
+#start ./htmlcov/index.html
 
 
 class Test(TestCase):
@@ -228,3 +234,6 @@ class Test(TestCase):
             c = commit.Commit(cm, self.diff_marker)
             self.assertEqual(c.get_bit_mask(), c.get_bit_mask())
             self.assertTrue(0 < c.get_bit_mask() < 2 ** commit.bit_mask_length)
+
+if __name__ == '__main__':
+    unittest.main()

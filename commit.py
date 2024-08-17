@@ -14,13 +14,19 @@ git_origin_pattern = rf"GitOrigin-RevId: ({git_hash40})"
 max_levenshtein_string_length = 10 ** 4
 
 
+tolerable_bit_diff = 5
+min_levenshtein_similarity = 0.7
+
+def is_similar_bitmask(bitmask1, bitmask2):
+    if not bitmask1 or not bitmask2:
+        return None
+    return count_same_bits(bitmask1, bitmask2) + tolerable_bit_diff >= bit_mask_length
+
 def rotate_left(bitmask):
     return ((bitmask << 1) & all_ones) | (bitmask >> (bit_mask_length - 1))
 
 
 def count_same_bits(num1, num2):
-    if not num1 or not num2:
-        return np.nan
     same_bits = ~(num1 ^ num2)
     count = bin(same_bits & all_ones).count('1')
     return count
@@ -148,14 +154,14 @@ class Commit:
             patch_string = patch_string[:max_levenshtein_string_length//2] + patch_string[-max_levenshtein_string_length//2:]
         return '\n'.join(line for line in patch_string.splitlines() if not line.startswith("index "))
 
-    def similarity_to(self, neighbor):
+    def has_similar_text_to(self, neighbor):
         if not self.parseable or not neighbor.parseable:
-            return np.nan
+            return None
         else:
             if len(self.patch_set.__str__())*2 < len(neighbor.patch_set.__str__()) or len(self.patch_set.__str__()) > len(neighbor.patch_set.__str__())*2:
                 return 0
             patch_string1, patch_string2 = self.clean_patch_string(), neighbor.clean_patch_string()
-            return textdistance.levenshtein.normalized_similarity(patch_string1, patch_string2)
+            return textdistance.levenshtein.normalized_similarity(patch_string1, patch_string2) > min_levenshtein_similarity
 
     def add_neighbor(self, neighbor_commit):
         #we don't need to add a neighbor twice
@@ -163,9 +169,10 @@ class Commit:
             return
         candidate_neighbor = namedtuple('candidate_neighbor', ['neighbor', 'bit_sim', 'levenshtein_sim', 'explicit_cherrypick'])
 
-        bit_sim = count_same_bits(self.bit_mask, neighbor_commit.bit_mask) / bit_mask_length
+        bit_sim = is_similar_bitmask(self.bit_mask, neighbor_commit.bit_mask)
+        levenshtein_sim = self.has_similar_text_to(neighbor_commit)
 
-        neighbor_connection = candidate_neighbor(neighbor=neighbor_commit, bit_sim=bit_sim, levenshtein_sim=self.similarity_to(neighbor_commit),
+        neighbor_connection = candidate_neighbor(neighbor=neighbor_commit, bit_sim=bit_sim, levenshtein_sim=levenshtein_sim,
                                                  explicit_cherrypick=self.other_is_in_my_cherries(
                                                      neighbor_commit) or neighbor_commit.other_is_in_my_cherries(self))
         self.neighbor_connections.append(neighbor_connection)
