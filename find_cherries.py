@@ -146,7 +146,7 @@ def analyze_repo(folder):
     #remove non-parseable commits
     parseable_commits = [cd for cd in commits if cd.parseable]
     print(
-        f"{sh_folder}: #parseable {len(parseable_commits)} of {len(commits)} commits, #reapers identifiable by commit-message: {sum([1 for cd in parseable_commits if cd.has_explicit_cherrypick()])}")
+        f"{sh_folder}: #parseable {len(parseable_commits)} of {len(commits)} commits, #explicit reapers: {sum([1 for cd in parseable_commits if cd.has_explicit_cherrypick()])}")
 
     candidate_groups = get_candidate_groups(parseable_commits)
 

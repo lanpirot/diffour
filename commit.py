@@ -78,13 +78,13 @@ def get_hunk_strings(hunk, w_context, w_body, rs):
         elif line.value == ' No newline at end of file\n':
             ret.append((l, w_context))
         else:
-            raise
+            raise unidiff.UnidiffParseError
     return ret
 
 
 # create a dummy cherry commit to populate the git graph with unsampled, but known cherries
 def dummy_cherry_commit(commit_id, diff_marker):
-    dummy = Commit(f"\n{commit_id}\n!!Dummy Commit!!\n{diff_marker}\n", diff_marker)
+    dummy = Commit(f"\n{commit_id}\nA. Nonymous\n!!Dummy Commit!!\n{diff_marker}\n", diff_marker)
     return dummy
 
 
@@ -120,15 +120,12 @@ class Commit:
     def parse_commit_str(self, commit_str, diff_marker):
         commit_str = commit_str.split(diff_marker + "\n")
         if len(commit_str) != 2:
-            if commit_str[0].splitlines()[0]:
-                raise
-            # create dummy commit string for root
-            commit_str.append('')
-        start = commit_str[0].split("\n", 3)
+            raise ValueError
+        commit_header = commit_str[0].split("\n", 3)
 
-        if len(start) < 4:
-            raise
-        (parent_id, commit_id, author, commit_message) = (start[0], start[1], start[2], start[3:][0])
+        if len(commit_header) < 4:
+            raise ValueError
+        (parent_id, commit_id, author, commit_message) = (commit_header[0], commit_header[1], commit_header[2], commit_header[3:][0])
 
         commit_diff = commit_str[1]
         if len(commit_diff) > 1 and commit_diff[-2] == commit_diff[-1] == "\n":
@@ -198,18 +195,6 @@ class Commit:
 
     def other_is_in_my_cherries(self, other_commit):
         return other_commit.commit_id in self.explicit_cherries or other_commit.rev_id in self.explicit_cherries
-
-    def get_all_cherries_in_group(self, group):
-        group_ids = [c.commit_id for c in group] + [c.rev_id for c in group if c.has_rev_id()]
-        found_cherries = set()
-        missing_cherries = set(self.explicit_cherries)
-        for cherry in self.explicit_cherries:
-            if cherry in group_ids:
-                found_cherries.add(cherry)
-                missing_cherries.remove(cherry)
-        mini_dict = {**{c.commit_id: c for c in group}, **{c.rev_id: c for c in group if c.has_rev_id()}}
-        found_cherries = [mini_dict[c] for c in found_cherries]
-        return found_cherries, missing_cherries
 
     def is_younger_than(self, other_commit):
         return self.date > other_commit.date
