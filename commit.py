@@ -35,16 +35,16 @@ def count_same_bits(num1, num2):
 
 
 def sim_hash_weighted(hsh, weight):
-    sim_hash_weighted = np.zeros(bit_mask_length)
+    sim_hash_weight = np.zeros(bit_mask_length)
     digit = bit_mask_length - 1
     while hsh and digit >= 0:
         if hsh & 1:
-            sim_hash_weighted[digit] = weight
+            sim_hash_weight[digit] = weight
         else:
-            sim_hash_weighted[digit] = -weight
+            sim_hash_weight[digit] = -weight
         hsh >>= 1
         digit -= 1
-    return sim_hash_weighted
+    return sim_hash_weight
 
 
 def sim_hash_sum_to_bit_mask(sim_hash_sum):
@@ -65,18 +65,18 @@ def mingle_shingles(wdiff, n):
 # add it back in to not confuse "- print()" with "+ print()"
 def get_hunk_strings(hunk, w_context, w_body, rs):
     ret = []
-    for line in hunk:
-        l = line.value
+    for hunk_line in hunk:
+        line = hunk_line.value
         if rs:
-            l = l.rstrip()
-        if line.is_context:
-            ret.append((l, w_context))
-        elif line.is_added:
-            ret.append(("+" + l, w_body))
-        elif line.is_removed:
-            ret.append(("-" + l, w_body))
-        elif line.value == ' No newline at end of file\n':
-            ret.append((l, w_context))
+            line = line.rstrip()
+        if hunk_line.is_context:
+            ret.append((line, w_context))
+        elif hunk_line.is_added:
+            ret.append(("+" + line, w_body))
+        elif hunk_line.is_removed:
+            ret.append(("-" + line, w_body))
+        elif hunk_line.value == ' No newline at end of file\n':
+            ret.append((line, w_context))
         else:
             raise unidiff.UnidiffParseError
     return ret
@@ -84,12 +84,13 @@ def get_hunk_strings(hunk, w_context, w_body, rs):
 
 # create a dummy cherry commit to populate the git graph with unsampled, but known cherries
 def dummy_cherry_commit(commit_id, diff_marker):
+    # noinspection SpellCheckingInspection
     dummy = Commit(f"\n{commit_id}\nA. Nonymous\n!!Dummy Commit!!\n{diff_marker}\n", diff_marker)
     return dummy
 
 
 class Commit:
-    date_id: int = 2 ** bit_mask_length  # the cherry picks are sorted by date, we give them an ID by our processing order
+    date_id: int = 2 ** bit_mask_length  # the cherrypicks are sorted by date, we give them an ID by our processing order
     normal_weight: int = 1
     special_weight: int = 10
     rs: bool = True
@@ -117,7 +118,8 @@ class Commit:
         self.neighbor_connections: list = []
 
     # ugly parser of our git string
-    def parse_commit_str(self, commit_str, diff_marker):
+    @staticmethod
+    def parse_commit_str(commit_str, diff_marker):
         commit_str = commit_str.split(diff_marker + "\n")
         if len(commit_str) != 2:
             raise ValueError
@@ -135,7 +137,7 @@ class Commit:
             if len(patch_set) == 0:
                 raise unidiff.UnidiffParseError
             parseable = True
-        except unidiff.UnidiffParseError as e:
+        except unidiff.UnidiffParseError:
             parseable = False
             patch_set = None
         return parent_id, commit_id, author, commit_message, patch_set, parseable
@@ -210,7 +212,7 @@ class Commit:
     def get_weighted_diff(self):
         w_message = self.__class__.normal_weight
         w_filename = self.__class__.special_weight
-        w_hheader = self.__class__.normal_weight
+        w_header = self.__class__.normal_weight
         w_context = self.__class__.normal_weight
         w_body = self.__class__.special_weight
 
@@ -224,10 +226,10 @@ class Commit:
             if patch.is_binary_file:
                 # Binary file detected, we add the commit message, to compensate for us not knowing the actual file diff.
                 # This means, we hope the commit message gives us clues, what is going on in the binary files.
-                for l in self.commit_message.splitlines():
-                    weighted_diff += [(l, w_message)]
+                for line in self.commit_message.splitlines():
+                    weighted_diff += [(line, w_message)]
             for hunk in patch:
-                header = [(",".join([str(i) for i in [hunk.source_start, hunk.source_length, hunk.target_start, hunk.target_length]]), w_hheader)]
+                header = [(",".join([str(i) for i in [hunk.source_start, hunk.source_length, hunk.target_start, hunk.target_length]]), w_header)]
                 body = get_hunk_strings(hunk, w_context, w_body, self.__class__.rs)
                 weighted_diff += header
                 weighted_diff += body

@@ -18,18 +18,18 @@ pretty_format = commit_marker + "%n%P%n%H%n%an%n%s%b%n" + diff_marker
 command = f'git log --all --no-merges --date-order --pretty=format:"{pretty_format}" -p -U3 -n' + str(commit_limit)
 
 
-#create a (long) string of all commits and their unified diffs
+# create a (long) string of all commits and their unified diffs
 def create_git_diffs(folder):
     old_folder = os.getcwd()
     os.chdir(folder)
 
     if diff_file in os.listdir():
-        #we found the diff file, just read it
+        # we found the diff file, just read it
         with open(diff_file, "r", encoding="utf8", errors="replace") as file:
             os.chdir(old_folder)
             return file.read()
 
-    #no diff file found, produce it (and save it)
+    # no diff file found, produce it (and save it)
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
                             encoding='utf-8', errors='replace')
     with open(diff_file, "w+", encoding='utf-8') as file:
@@ -71,7 +71,7 @@ def get_candidate_groups(commit_diffs):
     return candidate_groups
 
 
-def commit_id_to_commitf(commits):
+def create_commit_id_to_commit(commits):
     return {c.commit_id: c for c in commits}
 
 
@@ -138,12 +138,13 @@ def save_cherries(commits, project_name):
 def analyze_repo(folder):
     sh_folder = folder.split("/")[-1]
     print(f"Working on {sh_folder} ...")
-    #TODO: file_rename_scheme = get_rename_scheme(folder)
+    # TODO: file_rename_scheme = get_rename_scheme(folder)
     commit_diff_string = create_git_diffs(folder)
     commits = parse_commit_diff_string(commit_diff_string)
-    commit_id_to_commit = commit_id_to_commitf(commits)
+    del commit_diff_string
+    commit_id_to_commit = create_commit_id_to_commit(commits)
 
-    #remove non-parseable commits
+    # remove non-parseable commits
     parseable_commits = [cd for cd in commits if cd.parseable]
     print(
         f"{sh_folder}: #parseable {len(parseable_commits)} of {len(commits)} commits, #explicit reapers: {sum([1 for cd in parseable_commits if cd.has_explicit_cherrypick()])}")
@@ -154,9 +155,9 @@ def analyze_repo(folder):
     add_known_cherry_picks_to_graph(commits, commit_id_to_commit)
     final_commits = remove_single_commits(commits)
     how_many_connections_are_known(final_commits, sh_folder)
-    #TODO: add parent relation (add merges back in)
+    # TODO: add parent relation (add merges back in)
 
-    #TODO: for those without known connection: look within commit messages for words of length 40 (see githash), print those out
+    # TODO: for those without known connection: look within commit messages for words of length 40 (see git hash), print those out
     # import re
     # git_hash40 = r"[a-fA-F0-9]{40}"
     # for c in final_commits:
@@ -178,7 +179,7 @@ if __name__ == '__main__':
 
     if small_sample:
         subfolder = repo_folder + "intellij-community"
-        #subfolder = repo_folder + "pydriller"
+        # subfolder = repo_folder + "pydriller"
         analyze_repo(subfolder)
     else:
         start_time = time.time()

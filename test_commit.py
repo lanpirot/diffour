@@ -6,11 +6,12 @@ import unidiff
 import commit
 from collections import namedtuple
 import random
+
 random.seed(42)
 
 
-#coverage report -m
-#coverage run .\test_commit.py; coverage html; start .\htmlcov\index.html
+# coverage report -m
+# coverage run .\test_commit.py; coverage html; start .\htmlcov\index.html
 
 
 class Test(TestCase):
@@ -133,7 +134,7 @@ class Test(TestCase):
         for i in range(len(self.commit_strings)):
             commit_str = self.commit_strings[i]
             c = commit.Commit(commit_str, self.diff_marker)
-            #self.assertEqual(c.date, 2**commit.bit_mask_length - i)
+            # self.assertEqual(c.date, 2**commit.bit_mask_length - i)
             self.assertTrue(len(c.author) > 10)
             self.assertTrue(0 <= c.bit_mask <= 2 ** commit.bit_mask_length)
             self.assertEqual(c.explicit_cherries, [])
@@ -147,10 +148,10 @@ class Test(TestCase):
     def test_parse_commit_string(self):
         cherry_messages = self.cherry_messages
 
-        origin_ID = "GitOrigin-RevId: 33299ac78503b3871b4a04f9def02497848eef57"
+        origin_id = "GitOrigin-RevId: 33299ac78503b3871b4a04f9def02497848eef57"
         for cm in cherry_messages:
             c = commit.Commit(
-                "parentID\ncommitID\nauthor\nmessage1\nmessage2\n" + cm + "\n" + origin_ID + "\n\n" + self.diff_marker + "\n" + self.dummy_diff,
+                "parentID\ncommitID\nauthor\nmessage1\nmessage2\n" + cm + "\n" + origin_id + "\n\n" + self.diff_marker + "\n" + self.dummy_diff,
                 self.diff_marker)
             self.assertEqual(c.author, "author")
             self.assertEqual(c.commit_id, "commitID")
@@ -160,13 +161,14 @@ class Test(TestCase):
             self.assertEqual(c.parseable, True)
             self.assertEqual(c.rev_id, "33299ac78503b3871b4a04f9def02497848eef57")
 
-        c.commit_message = "\ncommitID\nauthor\nmessage1\nmessage2\n" + cm + "\n" + origin_ID + "\n\n" + self.diff_marker + "\npseudo diff"
+        c.commit_message = "\ncommitID\nauthor\nmessage1\nmessage2\n" + cm + "\n" + origin_id + "\n\n" + self.diff_marker + "\npseudo diff"
         c = commit.Commit(
-            "\ncommitID\nauthor\nmessage1\nmessage2\n" + cm + "\n" + origin_ID + "\n\n" + self.diff_marker + "\n" + self.dummy_diff, self.diff_marker)
+            "\ncommitID\nauthor\nmessage1\nmessage2\n" + cm + "\n" + origin_id + "\n\n" + self.diff_marker + "\n" + self.dummy_diff, self.diff_marker)
         self.assertEqual(c.is_root, True)
 
         self.assertRaises(ValueError, commit.Commit, "No Diff marker present\n", "diffmarker")
-        self.assertRaises(ValueError, commit.Commit, "Diff marker present, but not enough of ID, parentID, author, message\ndiffmarker\n", "diffmarker")
+        self.assertRaises(ValueError, commit.Commit, "Diff marker present, but not enough of ID, parentID, author, message\ndiffmarker\n",
+                          "diffmarker")
 
     def test_has_rev_id(self):
         c = self.test_commit
@@ -243,12 +245,12 @@ class Test(TestCase):
 
     def test_get_all_cherries_in_group(self):
         pass
-        #assert(False)
+        # assert(False)
 
     def test_get_ordered_commit_pair(self):
         c = self.test_commit
         d = self.test_commit2
-        #lower numbers == older
+        # lower numbers == older
         self.assertEqual(c.get_ordered_commit_pair(d), (d, c))
         self.assertEqual(d.get_ordered_commit_pair(c), (d, c))
 
@@ -264,9 +266,9 @@ class Test(TestCase):
                 special_starters = ["+", "-", "a/", "b/", "/dev/null"]
                 lines = lines.splitlines()
                 specials = 0
-                for l in lines:
+                for line in lines:
                     for s in special_starters:
-                        if l.startswith(s):
+                        if line.startswith(s):
                             specials += 1
                             break
                 self.assertEqual(weight, max(((len(lines) - specials) * c.normal_weight + specials * c.special_weight), 1) // max(len(lines), 1))
@@ -279,7 +281,6 @@ class Test(TestCase):
         dummy.patch_set = unidiff.PatchSet(bin_file_diff)
         print(dummy.commit_message)
         self.assertEqual([('a/image.png', 10), ('b/image.png', 10), ('!!Dummy Commit!!', 1)], dummy.get_weighted_diff())
-
 
     def test_get_bit_mask(self):
         for cm in self.commit_strings:
@@ -299,7 +300,6 @@ class Test(TestCase):
             self.assertEqual(False, dummy.parseable)
             self.assertEqual(True, dummy.is_root)
 
-
     def test_clean_patch_string(self):
         dummy_diff_with = "diff --git a/sys/kern/imgact_elf.c b/sys/kern/imgact_elf.c\nindex 28ffdd03dd6d..494456ceeeae 100644\n--- a/sys/kern/imgact_elf.c\n+++ b/sys/kern/imgact_elf.c\n@@ -617,9 +617,9 @@ __elfN(map_insert)(const struct image_params *imgp, vm_map_t map,\n 	return (KERN_SUCCESS);\n }\n \n-static int __elfN(load_section)(const struct image_params *imgp,\n-    vm_ooffset_t offset, caddr_t vmaddr, size_t memsz, size_t filsz,\n-    vm_prot_t prot)\n+static int\n+__elfN(load_section)(const struct image_params *imgp, vm_ooffset_t offset,\n+    caddr_t vmaddr, size_t memsz, size_t filsz, vm_prot_t prot)\n {\n 	struct sf_buf *sf;\n 	size_t map_len;\n"
         dummy_diff_without = "diff --git a/sys/kern/imgact_elf.c b/sys/kern/imgact_elf.c\n--- a/sys/kern/imgact_elf.c\n+++ b/sys/kern/imgact_elf.c\n@@ -617,9 +617,9 @@ __elfN(map_insert)(const struct image_params *imgp, vm_map_t map,\n 	return (KERN_SUCCESS);\n }\n \n-static int __elfN(load_section)(const struct image_params *imgp,\n-    vm_ooffset_t offset, caddr_t vmaddr, size_t memsz, size_t filsz,\n-    vm_prot_t prot)\n+static int\n+__elfN(load_section)(const struct image_params *imgp, vm_ooffset_t offset,\n+    caddr_t vmaddr, size_t memsz, size_t filsz, vm_prot_t prot)\n {\n 	struct sf_buf *sf;\n 	size_t map_len;\n"
@@ -309,11 +309,11 @@ class Test(TestCase):
         dummy_without.parseable = True
 
         for i in range(3):
-            dummy_with.patch_set = unidiff.PatchSet(dummy_diff_with * 10**i)
-            dummy_without.patch_set = unidiff.PatchSet(dummy_diff_without * 10**i)
+            dummy_with.patch_set = unidiff.PatchSet(dummy_diff_with * 10 ** i)
+            dummy_without.patch_set = unidiff.PatchSet(dummy_diff_without * 10 ** i)
 
             self.assertFalse(dummy_with.clean_patch_string().__contains__("index "))
-            if len(dummy_diff_without) * 10**i < commit.max_levenshtein_string_length:
+            if len(dummy_diff_without) * 10 ** i < commit.max_levenshtein_string_length:
                 self.assertTrue(len(dummy_with.clean_patch_string()) == len(dummy_without.clean_patch_string()))
             else:
                 self.assertTrue(len(dummy_with.clean_patch_string()) < len(dummy_without.clean_patch_string()))
@@ -353,14 +353,12 @@ class Test(TestCase):
         dummy.add_neighbor(dummy)
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
-
-
         neighbor = commit.dummy_cherry_commit("neighbor", "marker")
         neighbor.parseable = True
         neighbor.bit_mask = 3
         neighbor.patch_set = unidiff.PatchSet(self.dummy_diff)
         dummy.add_neighbor(neighbor)
-        neighbors += [commit.Neighbor(neighbor=neighbor, sim=True, bit_sim=63/64, levenshtein_sim=1.0, explicit_cherrypick=False)]
+        neighbors += [commit.Neighbor(neighbor=neighbor, sim=True, bit_sim=63 / 64, levenshtein_sim=1.0, explicit_cherrypick=False)]
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
         other_neighbor = commit.dummy_cherry_commit("neighbor", "marker")
@@ -377,6 +375,7 @@ class Test(TestCase):
         dummy.add_neighbor(other_neighbor)
         neighbors += [commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=None, levenshtein_sim=None, explicit_cherrypick=True)]
         self.assertEqual(neighbors, dummy.neighbor_connections)
+
 
 if __name__ == '__main__':
     unittest.main()
