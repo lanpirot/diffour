@@ -1,16 +1,16 @@
 import os
 import subprocess
 import numpy as np
+import re
 
 import commit
 import time
 from joblib import Parallel, delayed
 
-commit_limit = 10000
+commit_limit = 1000
 repo_folder = "../data/cherry_repos/"
 save_folder = "cherry_data/"
 diff_file = 'diffs_' + str(commit_limit)
-
 
 commit_marker = "====xxx_next_commit_xxx===="
 diff_marker = "####xxx_next_diff_xxx####"
@@ -18,10 +18,23 @@ pretty_format = commit_marker + "%n%P%n%H%n%an%n%s%b%n" + diff_marker
 command = f'git log --all --no-merges --date-order --pretty=format:"{pretty_format}" -p -U3 -n' + str(commit_limit)
 
 
+def init_git():
+    subprocess.run("git stash clear", shell=True)
+    with open(".gitattributes", "r+") as file:
+        text = file.read()
+        if not re.search(r"\*\.pdf\s*binary", text):
+            text += "*.pdf binary\n"
+        if not re.search(r"\*\s*text\s*=\s*auto", text):
+            text += "* text=auto\n"
+    with open(".gitattributes", "w") as file:
+        file.write(text)
+
+
 # create a (long) string of all commits and their unified diffs
 def create_git_diffs(folder):
     old_folder = os.getcwd()
     os.chdir(folder)
+    init_git()
 
     if diff_file in os.listdir():
         # we found the diff file, just read it
@@ -115,7 +128,7 @@ def how_many_connections_are_known(commit_diffs, folder):
             else:
                 unknown += 1
     known, unknown = known // 2, unknown // 2
-    print(f"{folder}: Known connections (cherry and reaper, or reapers pointing to same cherries): {known}, unknown: {unknown}")
+    print(f"{folder}: Known connections (cherry and reaper): {known}, unknown: {unknown}")
 
 
 # only save connections from younger commit to older commit (direction of picking), their similarities, whether they have a known connection
@@ -146,8 +159,8 @@ def analyze_repo(folder):
 
     # remove non-parseable commits
     parseable_commits = [cd for cd in commits if cd.parseable]
-    print(
-        f"{sh_folder}: #parseable {len(parseable_commits)} of {len(commits)} commits, #explicit reapers: {sum([1 for cd in parseable_commits if cd.has_explicit_cherrypick()])}")
+    print(f"{sh_folder}: #parseable {len(parseable_commits)} of {len(commits)} commits, "
+          f"#explicit reapers: {sum([1 for cd in parseable_commits if cd.has_explicit_cherrypick()])}")
 
     candidate_groups = get_candidate_groups(parseable_commits)
 
@@ -175,14 +188,14 @@ if __name__ == '__main__':
     subfolders = os.walk(repo_folder).__next__()[1]
     subfolders = [repo_folder + folder for folder in subfolders]
 
-    small_sample = False
+    full_sample = True
 
-    if small_sample:
-        subfolder = repo_folder + "intellij-community"
-        # subfolder = repo_folder + "pydriller"
-        analyze_repo(subfolder)
-    else:
+    if full_sample:
         start_time = time.time()
         Parallel(n_jobs=-1)(delayed(analyze_repo)(repo) for repo in subfolders)
         end_time = time.time()
         print(f"Execution time: {end_time - start_time:.1f} seconds")
+    else:
+        # subfolder = repo_folder + "intellij-community"
+        subfolder = repo_folder + "WebKit"
+        analyze_repo(subfolder)

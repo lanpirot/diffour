@@ -12,8 +12,9 @@ cherry_commit_message_pattern: str = rf"\(cherry picked from commit ({git_hash40
 git_origin_pattern: str = rf"GitOrigin-RevId: ({git_hash40})"
 max_levenshtein_string_length: int = 10 ** 4
 
-min_bit_similarity: float = 0.9
-min_levenshtein_similarity: float = 0.7
+max_bit_diff = 4
+min_bit_similarity: float = (bit_mask_length - max_bit_diff)/bit_mask_length
+min_levenshtein_similarity: float = 0.75
 
 
 def is_similar_bitmask(bitmask1, bitmask2):
