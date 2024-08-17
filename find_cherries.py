@@ -1,7 +1,7 @@
 import os
 import subprocess
+import numpy as np
 
-import cherry_reap
 import commit
 import time
 from joblib import Parallel, delayed
@@ -59,7 +59,7 @@ def get_candidate_groups(commit_diffs):
         bit_masks = [(commit.rotate_left(bm[0]), bm[1]) for bm in bit_masks]
         bit_masks = sorted(bit_masks, key=lambda x: x[0])
         for j in range(len(bit_masks)):
-            if commit.is_similar_bitmask(bit_masks[j][0], bit_masks[(j + 1) % len(bit_masks)][0]):
+            if commit.is_similar_bitmask(bit_masks[j][0], bit_masks[(j + 1) % len(bit_masks)][0])[0]:
                 mi, ma = min(bit_masks[j][1], bit_masks[j + 1][1]), max(bit_masks[j][1], bit_masks[j + 1][1])
                 # we found commits with neighboring bitmasks after some rotation, they also have highly similar bitmasks
                 # add the groups of each representative to the other representative's group
@@ -71,31 +71,18 @@ def get_candidate_groups(commit_diffs):
     return candidate_groups
 
 
-def find_explicit_cherryreaps(candidate_groups):
-    explicit_cherryreaps = set()
-    for cg in candidate_groups.values():
-        # find all commits with explicit cherrypicks
-        exp_cps = [c for c in cg if c.has_explicit_cherrypick()]
-        for cp in exp_cps:
-            (cherries, missing_cherries) = cp.get_all_cherries_in_group(cg)
-            reap = cherry_reap.CherryReap(cp, cherries, missing_cherries)
-            explicit_cherryreaps.add(reap)
-    return explicit_cherryreaps
-
-
 def commit_id_to_commitf(commits):
     return {c.commit_id: c for c in commits}
 
 
-def add_close_levenshteins_to_graph(candidate_groups, c_id_to_c):
+def connect_similar_neighbors(candidate_groups):
     for cg in candidate_groups.values():
         lcg = list(cg)
         for i in range(len(lcg) - 1):
             for j in range(i + 1, len(lcg)):
                 mi, ma = lcg[i].get_ordered_commit_pair(lcg[j])
-                if mi.has_similar_text_to(ma):
-                    mi.add_neighbor(ma)
-                    ma.add_neighbor(mi)
+                mi.add_neighbor(ma)
+                ma.add_neighbor(mi)
 
 
 def add_known_cherry_picks_to_graph(commit_diffs, c_id_to_c):
@@ -106,6 +93,7 @@ def add_known_cherry_picks_to_graph(commit_diffs, c_id_to_c):
                     cherry = c_id_to_c[cherry_id]
                 else:
                     cherry = commit.dummy_cherry_commit(cherry_id, diff_marker)
+                    # it would be cleaner to add dummies to the c_id_to_c lookup table
                 cd.add_neighbor(cherry)
                 cherry.add_neighbor(cd)
 
@@ -136,14 +124,14 @@ def commits_to_csv(commits):
     for c in commits:
         for cn in c.neighbor_connections:
             if c.is_younger_than(cn.neighbor):
-                csv += f"{c.commit_id},{cn.neighbor.commit_id},{cn.bit_sim},{cn.levenshtein_sim},{cn.explicit_cherrypick}\n"
+                csv += f"{c.commit_id},{cn.neighbor.commit_id},{cn.sim},{cn.bit_sim},{cn.levenshtein_sim},{cn.explicit_cherrypick},{np.nan}\n"
     return csv
 
 
 def save_cherries(commits, project_name):
     os.makedirs(save_folder, exist_ok=True)
     with open(save_folder + project_name + "_" + str(commit_limit) + ".csv", 'w') as file:
-        file.write("reaper,cherry,bit_similar,levenshtein_similar,known_pick\n")
+        file.write("reaper,cherry,similar,bit_similarity,levenshtein_similarity,known_pick,patch_similarity\n")
         file.write(commits_to_csv(commits))
 
 
@@ -162,12 +150,11 @@ def analyze_repo(folder):
 
     candidate_groups = get_candidate_groups(parseable_commits)
 
-    add_close_levenshteins_to_graph(candidate_groups, commit_id_to_commit)
+    connect_similar_neighbors(candidate_groups)
     add_known_cherry_picks_to_graph(commits, commit_id_to_commit)
     final_commits = remove_single_commits(commits)
     how_many_connections_are_known(final_commits, sh_folder)
-    #TODO: combine similarity, add bit_similarity, levenshtein_similarity
-    #TODO: add parent relation
+    #TODO: add parent relation (add merges back in)
 
     #TODO: for those without known connection: look within commit messages for words of length 40 (see githash), print those out
     # import re

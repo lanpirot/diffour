@@ -3,24 +3,26 @@ import unidiff
 import re
 import numpy as np
 import mmh3
-from collections import namedtuple
-import random
+from dataclasses import dataclass
 
-bit_mask_length = 64
-all_ones = 2 ** bit_mask_length - 1
-git_hash40 = "[a-fA-F0-9]{40}"
-cherry_commit_message_pattern = rf"\(cherry picked from commit ({git_hash40})\)|X-original-commit: ({git_hash40})"
-git_origin_pattern = rf"GitOrigin-RevId: ({git_hash40})"
-max_levenshtein_string_length = 10 ** 4
+bit_mask_length: int = 64
+all_ones: int = 2 ** bit_mask_length - 1
+git_hash40: str = "[a-fA-F0-9]{40}"
+cherry_commit_message_pattern: str = rf"\(cherry picked from commit ({git_hash40})\)|X-original-commit: ({git_hash40})"
+git_origin_pattern: str = rf"GitOrigin-RevId: ({git_hash40})"
+max_levenshtein_string_length: int = 10 ** 4
 
+min_bit_similarity: float = 0.9
+min_levenshtein_similarity: float = 0.7
 
-tolerable_bit_diff = 5
-min_levenshtein_similarity = 0.7
 
 def is_similar_bitmask(bitmask1, bitmask2):
     if not bitmask1 or not bitmask2:
-        return None
-    return count_same_bits(bitmask1, bitmask2) + tolerable_bit_diff >= bit_mask_length
+        return False, None
+    same_bits = count_same_bits(bitmask1, bitmask2)
+    bit_sim = same_bits / bit_mask_length
+    return bit_sim >= min_bit_similarity, bit_sim
+
 
 def rotate_left(bitmask):
     return ((bitmask << 1) & all_ones) | (bitmask >> (bit_mask_length - 1))
@@ -54,13 +56,13 @@ def sim_hash_sum_to_bit_mask(sim_hash_sum):
     return bm
 
 
-#single lines are no great shingles, connect them to give each other context
+# single lines are no great shingles, connect them to give each other context
 def mingle_shingles(wdiff, n):
     return [("".join([wdiff[j][0] for j in range(i, i + n)]), sum([wdiff[j][1] for j in range(i, i + n)]) // n) for i in range(len(wdiff) - n + 1)]
 
 
-#the unidiff lib cuts off the leading - and + of the hunk body
-#add it back in to not confuse "- print()" with "+ print()"
+# the unidiff lib cuts off the leading - and + of the hunk body
+# add it back in to not confuse "- print()" with "+ print()"
 def get_hunk_strings(hunk, w_context, w_body, rs):
     ret = []
     for line in hunk:
@@ -79,41 +81,48 @@ def get_hunk_strings(hunk, w_context, w_body, rs):
             raise
     return ret
 
+
+# create a dummy cherry commit to populate the git graph with unsampled, but known cherries
 def dummy_cherry_commit(commit_id, diff_marker):
     dummy = Commit(f"\n{commit_id}\n!!Dummy Commit!!\n{diff_marker}\n", diff_marker)
     return dummy
 
 
 class Commit:
-    date_id = 2 ** bit_mask_length  # the cherry picks are sorted by date, we give them an ID by our processing order
-    normal_weight = 1
-    special_weight = 10
-    rs = True
+    date_id: int = 2 ** bit_mask_length  # the cherry picks are sorted by date, we give them an ID by our processing order
+    normal_weight: int = 1
+    special_weight: int = 10
+    rs: bool = True
 
     def __init__(self, commit_str, diff_marker):
         self.date = self.__class__.date_id
         self.__class__.date_id -= 1
 
-        self.parent_id = None
-        self.is_root = None
-        self.commit_id = None
-        self.rev_id = None
-        self.explicit_cherries = None
-        self.author = None
-        self.commit_message = None
-        self.parseable = True
-        self.patch_set = None
-        self.bit_mask = None
-        self.parse_commit_str(commit_str, diff_marker)
-        self.neighbor_connections = []
+        (parent_id, commit_id, author, commit_message, patch_set, parseable) = self.parse_commit_str(commit_str, diff_marker)
 
-    #ugly parser of our git string
+        self.commit_message: str = commit_message
+        self.author: str = author
+        self.parent_id: str = parent_id
+        self.commit_id: str = commit_id
+        self.is_root: bool = len(self.parent_id) == 0
+        self.rev_id: str = self.get_rev_id()
+        self.explicit_cherries: list = []
+        self.patch_set: unidiff.PatchSet = patch_set
+        self.parseable: bool = parseable
+        self.bit_mask: int
+        if self.parseable:
+            self.bit_mask = self.get_bit_mask()
+        else:
+            self.bit_mask = None
+        self.neighbor_connections: list = []
+
+    # ugly parser of our git string
     def parse_commit_str(self, commit_str, diff_marker):
         commit_str = commit_str.split(diff_marker + "\n")
         if len(commit_str) != 2:
             if commit_str[0].splitlines()[0]:
                 raise
-            #create dummy commit string for root
+            # create dummy commit string for root
             commit_str.append('')
         start = commit_str[0].split("\n", 3)
 
@@ -128,22 +137,11 @@ class Commit:
             patch_set = unidiff.PatchSet(commit_diff)
             if len(patch_set) == 0:
                 raise unidiff.UnidiffParseError
+            parseable = True
         except unidiff.UnidiffParseError as e:
-            self.parseable = False
+            parseable = False
             patch_set = None
-        self.populate_fields(parent_id, commit_id, author, commit_message, patch_set)
-
-    def populate_fields(self, parent_id, commit_id, author, commit_message, patch_set):
-        self.parent_id = parent_id
-        self.is_root = len(self.parent_id) == 0
-        self.commit_id = commit_id
-        self.author = author
-        self.commit_message = commit_message
-        self.patch_set = patch_set
-        if self.parseable:
-            self.bit_mask = self.get_bit_mask()
-        self.rev_id = self.get_rev_id()
-        self.explicit_cherries = self.get_explicit_cherrypicks()
+        return parent_id, commit_id, author, commit_message, patch_set, parseable
 
     # we remove the index line of a patch-diff (it states the hashsum of a file, which is okay to differ)
     # we also limit the maximal string length to avoid system crashes, and get some speed
@@ -151,31 +149,33 @@ class Commit:
     def clean_patch_string(self):
         patch_string = self.patch_set.__str__()
         if len(patch_string) > max_levenshtein_string_length:
-            patch_string = patch_string[:max_levenshtein_string_length//2] + patch_string[-max_levenshtein_string_length//2:]
+            patch_string = patch_string[:max_levenshtein_string_length // 2] + patch_string[-max_levenshtein_string_length // 2:]
         return '\n'.join(line for line in patch_string.splitlines() if not line.startswith("index "))
 
     def has_similar_text_to(self, neighbor):
         if not self.parseable or not neighbor.parseable:
-            return None
-        else:
-            if len(self.patch_set.__str__())*2 < len(neighbor.patch_set.__str__()) or len(self.patch_set.__str__()) > len(neighbor.patch_set.__str__())*2:
-                return 0
-            patch_string1, patch_string2 = self.clean_patch_string(), neighbor.clean_patch_string()
-            return textdistance.levenshtein.normalized_similarity(patch_string1, patch_string2) > min_levenshtein_similarity
+            return False, None
+        if len(self.patch_set.__str__()) * 2 < len(neighbor.patch_set.__str__()) or len(self.patch_set.__str__()) > len(
+                neighbor.patch_set.__str__()) * 2:
+            return False, 0
+        patch_string1, patch_string2 = self.clean_patch_string(), neighbor.clean_patch_string()
+        similarity = textdistance.levenshtein.normalized_similarity(patch_string1, patch_string2)
+        return similarity >= min_levenshtein_similarity, similarity
 
     def add_neighbor(self, neighbor_commit):
-        #we don't need to add a neighbor twice
+        # we don't need to add a neighbor twice
         if neighbor_commit.commit_id in [c.neighbor.commit_id for c in self.neighbor_connections]:
             return
-        candidate_neighbor = namedtuple('candidate_neighbor', ['neighbor', 'bit_sim', 'levenshtein_sim', 'explicit_cherrypick'])
 
-        bit_sim = is_similar_bitmask(self.bit_mask, neighbor_commit.bit_mask)
-        levenshtein_sim = self.has_similar_text_to(neighbor_commit)
+        bit_sim, bit_sim_level = is_similar_bitmask(self.bit_mask, neighbor_commit.bit_mask)
+        text_sim, levenshtein_sim_level = self.has_similar_text_to(neighbor_commit)
+        sim = bit_sim and text_sim
+        explicit_cherrypick = self.other_is_in_my_cherries(neighbor_commit) or neighbor_commit.other_is_in_my_cherries(self)
 
-        neighbor_connection = candidate_neighbor(neighbor=neighbor_commit, bit_sim=bit_sim, levenshtein_sim=levenshtein_sim,
-                                                 explicit_cherrypick=self.other_is_in_my_cherries(
-                                                     neighbor_commit) or neighbor_commit.other_is_in_my_cherries(self))
-        self.neighbor_connections.append(neighbor_connection)
+        if sim or explicit_cherrypick:
+            neighbor = Neighbor(neighbor=neighbor_commit, sim=sim, bit_sim=bit_sim_level, levenshtein_sim=levenshtein_sim_level,
+                                explicit_cherrypick=explicit_cherrypick)
+            self.neighbor_connections.append(neighbor)
 
     def has_rev_id(self):
         return re.search(git_origin_pattern, self.commit_message) is not None
@@ -232,7 +232,7 @@ class Commit:
         if not self.parseable:
             return None
         weighted_diff = []
-        #weighted_diff += [(self.commit_message, w_message)]
+        # weighted_diff += [(self.commit_message, w_message)]
 
         for patch in self.patch_set:
             weighted_diff += [(patch.source_file, w_filename), (patch.target_file, w_filename)]
@@ -260,3 +260,12 @@ class Commit:
 
             sim_hash_sum += sim_hash_weighted(hsh, weight)
         return sim_hash_sum_to_bit_mask(sim_hash_sum)
+
+
+@dataclass
+class Neighbor:
+    neighbor: Commit
+    sim: bool
+    bit_sim: float
+    levenshtein_sim: float
+    explicit_cherrypick: bool
