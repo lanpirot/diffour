@@ -107,7 +107,7 @@ class Commit:
         self.commit_id: str = commit_id
         self.is_root: bool = len(self.parent_id) == 0
         self.rev_id: str = self.get_rev_id()
-        self.explicit_cherries: list = []
+        self.explicit_cherries: list = self.get_explicit_cherrypicks()
         self.patch_set: unidiff.PatchSet = patch_set
         self.parseable: bool = parseable
         self.bit_mask: int

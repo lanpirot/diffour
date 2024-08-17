@@ -6,7 +6,7 @@ import commit
 import time
 from joblib import Parallel, delayed
 
-commit_limit = 1000
+commit_limit = 10000
 repo_folder = "../data/cherry_repos/"
 save_folder = "cherry_data/"
 diff_file = 'diffs_' + str(commit_limit)
@@ -88,7 +88,7 @@ def connect_similar_neighbors(candidate_groups):
 def add_known_cherry_picks_to_graph(commit_diffs, c_id_to_c):
     for cd in commit_diffs:
         if cd.has_explicit_cherrypick():
-            for cherry_id in cd.get_explicit_cherrypicks():
+            for cherry_id in cd.explicit_cherries:
                 if cherry_id in c_id_to_c:
                     cherry = c_id_to_c[cherry_id]
                 else:
