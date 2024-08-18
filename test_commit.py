@@ -349,7 +349,7 @@ class Test(TestCase):
         dummy = commit.dummy_cherry_commit("dummy", "marker")
         dummy.parseable = True
         dummy.bit_mask = 1
-        dummy.patch_set = unidiff.PatchSet(self.dummy_diff)
+        dummy.patch_string = self.dummy_diff
         self.assertEqual([], dummy.neighbor_connections)
         dummy.add_neighbor(dummy)
         neighbors = [commit.Neighbor(neighbor=dummy, sim=True, bit_sim=1.0, levenshtein_sim=1.0, explicit_cherrypick=False)]
@@ -360,7 +360,7 @@ class Test(TestCase):
         neighbor = commit.dummy_cherry_commit("neighbor", "marker")
         neighbor.parseable = True
         neighbor.bit_mask = 3
-        neighbor.patch_set = unidiff.PatchSet(self.dummy_diff)
+        neighbor.patch_string = self.dummy_diff
         dummy.add_neighbor(neighbor)
         neighbors += [commit.Neighbor(neighbor=neighbor, sim=True, bit_sim=63 / 64, levenshtein_sim=1.0, explicit_cherrypick=False)]
         self.assertEqual(neighbors, dummy.neighbor_connections)
