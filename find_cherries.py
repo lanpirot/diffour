@@ -51,6 +51,36 @@ def create_git_diffs(folder):
     return result.stdout
 
 
+# TODO: read directly from subprocess stream, commit-wise
+# import subprocess
+#
+# commit_marker = "COMMIT_MARKER"  # Replace with the actual commit marker string
+#
+# def process_commit(commit_data):
+#     # Process the bundled commit data here
+#     print("Processing commit data:")
+#     print(commit_data)
+#
+# # Start the subprocess
+# process = subprocess.Popen(['your_command'], stdout=subprocess.PIPE, text=True)
+#
+# current_commit = []
+# for line in iter(process.stdout.readline, ''):
+#     if line == commit_marker + "\n":
+#         if current_commit:
+#             process_commit(''.join(current_commit))
+#             current_commit = []
+#     else:
+#         current_commit.append(line)
+#
+# # Process the last commit if any
+# if current_commit:
+#     process_commit(''.join(current_commit))
+#
+# # Ensure the process finishes
+# process.stdout.close()
+# process.wait()
+
 def parse_commit_diff_string(commit_diff_string):
     diffs = []
     for cm in commit_diff_string.split(commit_marker + "\n")[1:]:
@@ -149,6 +179,7 @@ def save_cherries(commits, project_name):
 
 
 def analyze_repo(folder):
+    job_start_time = time.time()
     sh_folder = folder.split("/")[-1]
     print(f"Working on {sh_folder} ...")
     # TODO: file_rename_scheme = get_rename_scheme(folder)
@@ -182,6 +213,8 @@ def analyze_repo(folder):
     #             print(c.commit_id, "\n", c.commit_message, "\n\n\n", nn.commit_id, "\n", nn.commit_message, "\n\n\n")
     save_cherries(final_commits, sh_folder)
     pass
+    job_end_time = time.time()
+    print(f"{sh_folder}: Execution time: {job_end_time - job_start_time:.1f} seconds")
 
 
 if __name__ == '__main__':

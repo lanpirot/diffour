@@ -125,8 +125,8 @@ class Test(TestCase):
         self.assertEqual(commit.get_hunk_strings(hunk, w_context, w_body, True),
                          [('0', 1), ('+1', 10), ('-2', 10), ('3', 1), ('+4', 10), ('-5', 10), ('6', 1), ('+7', 10), ('-8', 10), ('9', 1)])
 
-        Hunk_line = namedtuple('line', ['value', 'is_context', 'is_added', 'is_removed', 'UNKNOWN_TYPE'])
-        hunk = [Hunk_line(value=str(i), is_context=i % 4 == 0, is_added=i % 4 == 1, is_removed=i % 4 == 2, UNKNOWN_TYPE=i % 4 == 3) for i in
+        Hunk_line = namedtuple('line', ['value', 'is_context', 'is_added', 'is_removed', 'UNKNOWN_TYPE', 'line_type'])
+        hunk = [Hunk_line(value=str(i), is_context=i % 4 == 0, is_added=i % 4 == 1, is_removed=i % 4 == 2, UNKNOWN_TYPE=i % 4 == 3, line_type="my_line") for i in
                 range(10)]
         self.assertRaises(unidiff.UnidiffParseError, commit.get_hunk_strings, hunk, w_context, w_body, True)
 
@@ -142,7 +142,7 @@ class Test(TestCase):
             self.assertEqual(c.is_root, False)
             self.assertTrue(len(c.parent_id) == 40)
             self.assertEqual(c.parseable, True)
-            self.assertTrue(len(c.patch_set) > 0)
+            self.assertTrue(len(c.patch_string) > 0)
             self.assertTrue(c.rev_id is None or len(c.rev_id) == 40)
 
     def test_parse_commit_string(self):
@@ -260,9 +260,10 @@ class Test(TestCase):
         self.assertEqual(d.get_ordered_commit_pair(c), (c, d))
 
     def test_get_weighted_diff(self):
-        for c in [self.test_commit, self.test_commit2]:
+        for (c, cs) in [(self.test_commit, self.commit_strings[0]), (self.test_commit2, self.commit_strings[3])]:
             c.__class__.rs = False
-            for (lines, weight) in c.get_weighted_diff():
+            patch_set = unidiff.PatchSet(cs.split(self.diff_marker)[1][1:])
+            for (lines, weight) in c.get_weighted_diff(patch_set, c.commit_message):
                 special_starters = ["+", "-", "a/", "b/", "/dev/null"]
                 lines = lines.splitlines()
                 specials = 0
@@ -273,20 +274,23 @@ class Test(TestCase):
                             break
                 self.assertEqual(weight, max(((len(lines) - specials) * c.normal_weight + specials * c.special_weight), 1) // max(len(lines), 1))
 
-        dummy = commit.dummy_cherry_commit("abc", "def")
-        self.assertIsNone(dummy.get_weighted_diff())
+        diff_marker = "DIFF_MARKER"
+        dummy = commit.dummy_cherry_commit("abc", diff_marker)
+        patch_set = unidiff.PatchSet("")
+        self.assertEqual([], dummy.get_weighted_diff(patch_set, diff_marker))
 
         bin_file_diff = "diff --git a/image.png b/image.png\nindex 6bf2d1e..58b3c6d 100644\nBinary files a/image.png and b/image.png differ"
         dummy.parseable = True
-        dummy.patch_set = unidiff.PatchSet(bin_file_diff)
-        print(dummy.commit_message)
-        self.assertEqual([('a/image.png', 10), ('b/image.png', 10), ('!!Dummy Commit!!', 1)], dummy.get_weighted_diff())
+        patch_set = unidiff.PatchSet(bin_file_diff)
+        self.assertEqual([('a/image.png', 10), ('b/image.png', 10), ('!!Dummy Commit!!', 1)], dummy.get_weighted_diff(patch_set, dummy.commit_message))
 
     def test_get_bit_mask(self):
         for cm in self.commit_strings:
             c = commit.Commit(cm, self.diff_marker)
-            self.assertEqual(c.get_bit_mask(), c.get_bit_mask())
-            self.assertTrue(0 < c.get_bit_mask() < 2 ** commit.bit_mask_length)
+            patch_string = cm.split(self.diff_marker)[1][1:]
+            patch_set = unidiff.PatchSet(patch_string)
+            self.assertEqual(c.get_bit_mask(patch_set, c.commit_message), c.get_bit_mask(patch_set, c.commit_message))
+            self.assertTrue(0 < c.get_bit_mask(patch_set, c.commit_message) < 2 ** commit.bit_mask_length)
 
     def test_dummy(self):
         dummy_info = [("commit_id" + str(i), "diff_marker" + str(i)) for i in range(10)]
@@ -309,14 +313,14 @@ class Test(TestCase):
         dummy_without.parseable = True
 
         for i in range(3):
-            dummy_with.patch_set = unidiff.PatchSet(dummy_diff_with * 10 ** i)
-            dummy_without.patch_set = unidiff.PatchSet(dummy_diff_without * 10 ** i)
+            dummy_with.patch_string = dummy_with.clean_patch_string(unidiff.PatchSet(dummy_diff_with * 10 ** i).__str__())
+            dummy_without.patch_string = dummy_with.clean_patch_string(unidiff.PatchSet(dummy_diff_without * 10 ** i).__str__())
 
-            self.assertFalse(dummy_with.clean_patch_string().__contains__("index "))
+            self.assertFalse(dummy_with.patch_string.__contains__("index "))
             if len(dummy_diff_without) * 10 ** i < commit.max_levenshtein_string_length:
-                self.assertTrue(len(dummy_with.clean_patch_string()) == len(dummy_without.clean_patch_string()))
+                self.assertTrue(len(dummy_with.patch_string) == len(dummy_without.patch_string))
             else:
-                self.assertTrue(len(dummy_with.clean_patch_string()) < len(dummy_without.clean_patch_string()))
+                self.assertTrue(len(dummy_with.patch_string) < len(dummy_without.patch_string))
 
     def test_has_similar_text_to(self):
         dummy_with = commit.dummy_cherry_commit("id", "marker")
@@ -327,18 +331,18 @@ class Test(TestCase):
         dummy_diff_without = "diff --git a/sys/kern/imgact_elf.c b/sys/kern/imgact_elf.c\n--- a/sys/kern/imgact_elf.c\n+++ b/sys/kern/imgact_elf.c\n@@ -617,9 +617,9 @@ __elfN(map_insert)(const struct image_params *imgp, vm_map_t map,\n 	return (KERN_SUCCESS);\n }\n \n-static int __elfN(load_section)(const struct image_params *imgp,\n-    vm_ooffset_t offset, caddr_t vmaddr, size_t memsz, size_t filsz,\n-    vm_prot_t prot)\n+static int\n+__elfN(load_section)(const struct image_params *imgp, vm_ooffset_t offset,\n+    caddr_t vmaddr, size_t memsz, size_t filsz, vm_prot_t prot)\n {\n 	struct sf_buf *sf;\n 	size_t map_len;\n"
         dummy_with.parseable = True
         dummy_without.parseable = True
-        dummy_with.patch_set = unidiff.PatchSet(dummy_diff_with)
-        dummy_without.patch_set = unidiff.PatchSet(dummy_diff_without)
+        dummy_with.patch_string = dummy_with.clean_patch_string(unidiff.PatchSet(dummy_diff_with).__str__())
+        dummy_without.patch_string = dummy_with.clean_patch_string(unidiff.PatchSet(dummy_diff_without).__str__())
         self.assertEqual((True, 1.0), dummy_with.has_similar_text_to(dummy_with))
         self.assertEqual((True, 1.0), dummy_without.has_similar_text_to(dummy_without))
         self.assertEqual((True, 1.0), dummy_with.has_similar_text_to(dummy_without))
 
-        dummy_without.patch_set = unidiff.PatchSet(self.dummy_diff * 4)
+        dummy_without.patch_string = dummy_without.clean_patch_string((unidiff.PatchSet(self.dummy_diff*4)).__str__())
         (truthy, floaty) = dummy_with.has_similar_text_to(dummy_without)
         self.assertEqual(False, truthy)
-        self.assertTrue(0 < floaty)
+        self.assertTrue(0 < floaty < 1)
 
-        dummy_without.patch_set = unidiff.PatchSet(self.dummy_diff)
+        dummy_without.patch_string = dummy_without.clean_patch_string(unidiff.PatchSet(self.dummy_diff).__str__())
         self.assertEqual((False, 0.0), dummy_with.has_similar_text_to(dummy_without))
 
     def test_add_neighbor(self):

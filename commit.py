@@ -13,7 +13,7 @@ git_origin_pattern: str = rf"GitOrigin-RevId: ({git_hash40})"
 max_levenshtein_string_length: int = 10 ** 4
 
 max_bit_diff = 4
-min_bit_similarity: float = (bit_mask_length - max_bit_diff)/bit_mask_length
+min_bit_similarity: float = (bit_mask_length - max_bit_diff) / bit_mask_length
 min_levenshtein_similarity: float = 0.75
 
 
@@ -76,7 +76,7 @@ def get_hunk_strings(hunk, w_context, w_body, rs):
             ret.append(("+" + line, w_body))
         elif hunk_line.is_removed:
             ret.append(("-" + line, w_body))
-        elif hunk_line.value == ' No newline at end of file\n':
+        elif hunk_line.line_type == "\\" or hunk_line.line_type == "":
             ret.append((line, w_context))
         else:
             raise unidiff.UnidiffParseError
@@ -100,7 +100,7 @@ class Commit:
         self.date = self.__class__.date_id
         self.__class__.date_id -= 1
 
-        (parent_id, commit_id, author, commit_message, patch_set, parseable) = self.parse_commit_str(commit_str, diff_marker)
+        (parent_id, commit_id, author, commit_message, patch_string, parseable, bit_mask) = self.parse_commit_str(commit_str, diff_marker)
 
         self.commit_message: str = commit_message
         self.author: str = author
@@ -109,21 +109,18 @@ class Commit:
         self.is_root: bool = len(self.parent_id) == 0
         self.rev_id: str = self.get_rev_id()
         self.explicit_cherries: list = self.get_explicit_cherrypicks()
-        self.patch_set: unidiff.PatchSet = patch_set
+        self.patch_string: str = patch_string
         self.parseable: bool = parseable
-        self.bit_mask: int
-        if self.parseable:
-            self.bit_mask = self.get_bit_mask()
-        else:
-            self.bit_mask = None
+        self.bit_mask: int = bit_mask
         self.neighbor_connections: list = []
 
     # ugly parser of our git string
-    @staticmethod
-    def parse_commit_str(commit_str, diff_marker):
+    def parse_commit_str(self, commit_str, diff_marker):
         commit_str = commit_str.split(diff_marker + "\n")
         if len(commit_str) != 2:
-            raise ValueError
+            commit_str = commit_str[0].split(diff_marker)
+            if len(commit_str) != 2:
+                raise ValueError
         commit_header = commit_str[0].split("\n", 3)
 
         if len(commit_header) < 4:
@@ -137,17 +134,21 @@ class Commit:
             patch_set = unidiff.PatchSet(commit_diff)
             if len(patch_set) == 0:
                 raise unidiff.UnidiffParseError
+
+            # we compute the bitmask here, so we can forget the whole patch_string right away
+            bit_mask = self.get_bit_mask(patch_set, commit_message)
             parseable = True
         except unidiff.UnidiffParseError:
             parseable = False
             patch_set = None
-        return parent_id, commit_id, author, commit_message, patch_set, parseable
+            bit_mask = None
+        return parent_id, commit_id, author, commit_message, self.clean_patch_string(patch_set.__str__()), parseable, bit_mask
 
     # we remove the index line of a patch-diff (it states the hashsum of a file, which is okay to differ)
     # we also limit the maximal string length to avoid system crashes, and get some speed
     # we heuristically search the start and end only for long patches
-    def clean_patch_string(self):
-        patch_string = self.patch_set.__str__()
+    @staticmethod
+    def clean_patch_string(patch_string):
         if len(patch_string) > max_levenshtein_string_length:
             patch_string = patch_string[:max_levenshtein_string_length // 2] + patch_string[-max_levenshtein_string_length // 2:]
         return '\n'.join(line for line in patch_string.splitlines() if not line.startswith("index "))
@@ -155,11 +156,9 @@ class Commit:
     def has_similar_text_to(self, neighbor):
         if not self.parseable or not neighbor.parseable:
             return False, None
-        if len(self.patch_set.__str__()) * 2 < len(neighbor.patch_set.__str__()) or len(self.patch_set.__str__()) > len(
-                neighbor.patch_set.__str__()) * 2:
+        if len(self.patch_string) * 2 < len(neighbor.patch_string) or len(self.patch_string) > len(neighbor.patch_string) * 2:
             return False, 0
-        patch_string1, patch_string2 = self.clean_patch_string(), neighbor.clean_patch_string()
-        similarity = textdistance.levenshtein.normalized_similarity(patch_string1, patch_string2)
+        similarity = textdistance.levenshtein.normalized_similarity(self.patch_string, neighbor.patch_string)
         return similarity >= min_levenshtein_similarity, similarity
 
     def add_neighbor(self, neighbor_commit):
@@ -210,24 +209,21 @@ class Commit:
 
     # a list of weighted strings, the strings are mostly the diff itself
     # <string>, <weight>
-    def get_weighted_diff(self):
+    def get_weighted_diff(self, patch_set, commit_message):
         w_message = self.__class__.normal_weight
         w_filename = self.__class__.special_weight
         w_header = self.__class__.normal_weight
         w_context = self.__class__.normal_weight
         w_body = self.__class__.special_weight
 
-        if not self.parseable:
-            return None
         weighted_diff = []
-        # weighted_diff += [(self.commit_message, w_message)]
 
-        for patch in self.patch_set:
+        for patch in patch_set:
             weighted_diff += [(patch.source_file, w_filename), (patch.target_file, w_filename)]
             if patch.is_binary_file:
                 # Binary file detected, we add the commit message, to compensate for us not knowing the actual file diff.
                 # This means, we hope the commit message gives us clues, what is going on in the binary files.
-                for line in self.commit_message.splitlines():
+                for line in commit_message.splitlines():
                     weighted_diff += [(line, w_message)]
             for hunk in patch:
                 header = [(",".join([str(i) for i in [hunk.source_start, hunk.source_length, hunk.target_start, hunk.target_length]]), w_header)]
@@ -238,8 +234,8 @@ class Commit:
         return weighted_diff
 
     # create a bit_mask (a signature) of a commit
-    def get_bit_mask(self):
-        wdiff = self.get_weighted_diff()
+    def get_bit_mask(self, patch_set, commit_message):
+        wdiff = self.get_weighted_diff(patch_set, commit_message)
 
         sim_hash_sum = np.zeros(bit_mask_length)
         for (line, weight) in wdiff:
