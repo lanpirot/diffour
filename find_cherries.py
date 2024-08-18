@@ -7,21 +7,22 @@ import commit
 import time
 from joblib import Parallel, delayed
 
-commit_limit = 1000
-repo_folder = "../data/cherry_repos/"
-save_folder = "cherry_data/"
-diff_file = 'diffs_' + str(commit_limit)
+commit_limit: int = 1000
+repo_folder: str = "../data/cherry_repos/"
+save_folder: str = "cherry_data/"
+diff_file: str = "diffs_" + str(commit_limit)
 
-commit_marker = "====xxx_next_commit_xxx===="
-diff_marker = "####xxx_next_diff_xxx####"
-pretty_format = commit_marker + "%n%P%n%H%n%an%n%s%b%n" + diff_marker
-command = f'git log --all --no-merges --date-order --pretty=format:"{pretty_format}" -p -U3 -n' + str(commit_limit)
+commit_marker: str = "====xxx_next_commit_xxx===="
+commit_markern: str = commit_marker + "\n"
+diff_marker: str = "####xxx_next_diff_xxx####"
+pretty_format: str = commit_marker + "%n%P%n%H%n%an%n%s%b%n" + diff_marker
+command: str = f"git log --all --no-merges --date-order --pretty=format:\"{pretty_format}\" -p -U3 -n {commit_limit}"
 
 
-def init_git():
+def init_git() -> None:
     subprocess.run("git stash clear", shell=True)
     with open(".gitattributes", "r+") as file:
-        text = file.read()
+        text: str = file.read()
         if not re.search(r"\*\.pdf\s*binary", text):
             text += "*.pdf binary\n"
         if not re.search(r"\*\s*text\s*=\s*auto", text):
@@ -31,73 +32,50 @@ def init_git():
 
 
 # create a (long) string of all commits and their unified diffs
-def create_git_diffs(folder):
-    old_folder = os.getcwd()
+def parse_git_output(folder: str) -> list[commit.Commit]:
+    old_folder: str = os.getcwd()
     os.chdir(folder)
     init_git()
-
-    if diff_file in os.listdir():
-        # we found the diff file, just read it
-        with open(diff_file, "r", encoding="utf8", errors="replace") as file:
-            os.chdir(old_folder)
-            return file.read()
-
-    # no diff file found, produce it (and save it)
-    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
-                            encoding='utf-8', errors='replace')
-    with open(diff_file, "w+", encoding='utf-8') as file:
-        file.write(result.stdout)
+    process: subprocess.Popen = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                                 text=True, encoding='utf-8', errors='replace')
+    commits: list[commit.Commit] = read_in_commits_from_stdout(process)
     os.chdir(old_folder)
-    return result.stdout
+    return commits
 
 
-# TODO: read directly from subprocess stream, commit-wise
-# import subprocess
-#
-# commit_marker = "COMMIT_MARKER"  # Replace with the actual commit marker string
-#
-# def process_commit(commit_data):
-#     # Process the bundled commit data here
-#     print("Processing commit data:")
-#     print(commit_data)
-#
-# # Start the subprocess
-# process = subprocess.Popen(['your_command'], stdout=subprocess.PIPE, text=True)
-#
-# current_commit = []
-# for line in iter(process.stdout.readline, ''):
-#     if line == commit_marker + "\n":
-#         if current_commit:
-#             process_commit(''.join(current_commit))
-#             current_commit = []
-#     else:
-#         current_commit.append(line)
-#
-# # Process the last commit if any
-# if current_commit:
-#     process_commit(''.join(current_commit))
-#
-# # Ensure the process finishes
-# process.stdout.close()
-# process.wait()
+def read_in_commits_from_stdout(process: subprocess.Popen) -> list[commit.Commit]:
+    commits: list[commit.Commit] = []
+    remnant: str = ""
+    while True:
+        chunk: str = process.stdout.read(2**20 * 10)  # Read up to 10MB at a time
+        if not chunk:
+            commits.append(commit.Commit(remnant, diff_marker))
+            break
+        if commit_markern not in chunk:
+            continue
 
-def parse_commit_diff_string(commit_diff_string):
-    diffs = []
-    for cm in commit_diff_string.split(commit_marker + "\n")[1:]:
-        diffs += [commit.Commit(cm, diff_marker)]
-    return diffs
+        # Prepend any leftover data from the previous chunk
+        chunk = remnant + chunk
+        new_commits = chunk.split(commit_markern)
+        for nc in new_commits[:-1]:
+            if nc:
+                commits.append(commit.Commit(nc, diff_marker))
+        remnant = new_commits[-1]
+    process.stdout.close()
+    process.wait()
+    return commits
 
 
-def get_candidate_groups(commit_diffs):
-    identical_commit_hashes = {cd.bit_mask: set() for cd in commit_diffs}
+def get_candidate_groups(commit_diffs: list[commit.Commit]) -> dict[int, set[commit.Commit]]:
+    identical_commit_hashes: dict[int, set[commit.Commit]] = {cd.bit_mask: set() for cd in commit_diffs}
     for cd in commit_diffs:
         identical_commit_hashes[cd.bit_mask].add(cd)
 
-    all_groups = identical_commit_hashes.copy()
+    all_groups: dict[int, set[commit.Commit]] = identical_commit_hashes.copy()
 
-    bit_masks = list(identical_commit_hashes.keys())
+    bit_masks_keys: list[int] = list(identical_commit_hashes.keys())
     # save the original bitmask
-    bit_masks = [(bm, bm) for bm in bit_masks]
+    bit_masks: list[(int, int)] = [(bm, bm) for bm in bit_masks_keys]
     for i in range(commit.bit_mask_length):
         bit_masks = [(commit.rotate_left(bm[0]), bm[1]) for bm in bit_masks]
         bit_masks = sorted(bit_masks, key=lambda x: x[0])
@@ -110,7 +88,7 @@ def get_candidate_groups(commit_diffs):
                 all_groups[ma] = all_groups[ma].union(identical_commit_hashes[mi])
 
     # remove commits without partners
-    candidate_groups = {k: all_groups[k] for k in all_groups if len(all_groups[k]) > 1}
+    candidate_groups: dict[int, set[commit.Commit]] = {k: all_groups[k] for k in all_groups if len(all_groups[k]) > 1}
     return candidate_groups
 
 
@@ -154,7 +132,7 @@ def how_many_connections_are_known(commit_diffs, folder):
             else:
                 unknown += 1
     known, unknown = known // 2, unknown // 2
-    print(f"{folder}: Known connections (cherry and reaper): {known}, unknown: {unknown}")
+    print(f"{folder}: Known connections (cherry and picker): {known}, unknown: {unknown}")
 
 
 # only save connections from younger commit to older commit (direction of picking), their similarities, whether they have a known connection
@@ -170,7 +148,7 @@ def commits_to_csv(commits):
 def save_cherries(commits, project_name):
     os.makedirs(save_folder, exist_ok=True)
     with open(save_folder + project_name + "_" + str(commit_limit) + ".csv", 'w') as file:
-        file.write("reaper,cherry,similar,bit_similarity,levenshtein_similarity,known_pick,patch_similarity\n")
+        file.write("picker,cherry,similar,bit_similarity,levenshtein_similarity,known_pick,patch_similarity\n")
         file.write(commits_to_csv(commits))
 
 
@@ -179,15 +157,13 @@ def analyze_repo(folder):
     sh_folder = folder.split("/")[-1]
     print(f"Working on {sh_folder} ...")
     # TODO: file_rename_scheme = get_rename_scheme(folder)
-    commit_diff_string = create_git_diffs(folder)
-    commits = parse_commit_diff_string(commit_diff_string)
-    del commit_diff_string
+    commits = parse_git_output(folder)
     commit_id_to_commit = create_commit_id_to_commit(commits)
 
     # remove non-parseable commits
     parseable_commits = [cd for cd in commits if cd.parseable]
     print(f"{sh_folder}: #parseable {len(parseable_commits)} of {len(commits)} commits, "
-          f"#explicit reapers: {sum([1 for cd in parseable_commits if cd.has_explicit_cherrypick()])}")
+          f"#explicit pickers: {sum([1 for cd in parseable_commits if cd.has_explicit_cherrypick()])}")
 
     candidate_groups = get_candidate_groups(parseable_commits)
 
