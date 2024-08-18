@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="caught up the tests">
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="added parent relation (not tested yet)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/commit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/find_cherries.py" afterDir="false" />
@@ -54,6 +54,7 @@
     "Python tests.Python tests for test_commit.Test.test_has_rev_id.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_has_similar_text_to.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_init.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_is_child_of.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_is_similar_bitmask.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_mingle_shingles.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_other_is_in_my_cherries.executor": "Run",
@@ -78,7 +79,7 @@
       </set>
     </option>
   </component>
-  <component name="RunManager" selected="Python tests.Python tests for test_commit.Test.test_is_child_of">
+  <component name="RunManager" selected="Python.find_cherries">
     <configuration name="find_cherries" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
@@ -426,7 +427,15 @@
       <option name="project" value="LOCAL" />
       <updated>1723994612147</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="added parent relation (not tested yet)">
+      <option name="closed" value="true" />
+      <created>1723998448653</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1723998448653</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -441,7 +450,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="better hash function" />
     <MESSAGE value="added shingle mingling" />
     <MESSAGE value="cherry_candidates found, now (identical + close candidates)" />
     <MESSAGE value="sort into cherry pairs and candidate pairs" />
@@ -466,14 +474,15 @@
     <MESSAGE value="after online git-outputstream processing!" />
     <MESSAGE value="added type hints everywhere" />
     <MESSAGE value="caught up the tests" />
-    <option name="LAST_COMMIT_MESSAGE" value="caught up the tests" />
+    <MESSAGE value="added parent relation (not tested yet)" />
+    <option name="LAST_COMMIT_MESSAGE" value="added parent relation (not tested yet)" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/find_cherries.py</url>
-          <line>204</line>
+          <line>235</line>
           <option name="timeStamp" value="213" />
         </line-breakpoint>
       </breakpoints>

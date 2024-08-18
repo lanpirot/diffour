@@ -7,6 +7,7 @@ import numpy as np
 import mmh3
 from dataclasses import dataclass
 
+
 bit_mask_length: int = 64
 all_ones: int = 2 ** bit_mask_length - 1
 git_hash40: str = "[a-fA-F0-9]{40}"
@@ -19,6 +20,7 @@ min_bit_similarity: float = (bit_mask_length - max_bit_diff) / bit_mask_length
 min_levenshtein_similarity: float = 0.75
 
 
+# computes the similarity (and judges it against our cutoff "min_bit_similarity") of two bitmasks
 def is_similar_bitmask(bitmask1: int, bitmask2: int) -> tuple[bool, Optional[float]]:
     if bitmask1 is None or bitmask2 is None:
         return False, None
@@ -27,16 +29,21 @@ def is_similar_bitmask(bitmask1: int, bitmask2: int) -> tuple[bool, Optional[flo
     return bit_sim >= min_bit_similarity, bit_sim
 
 
+# left rotation of a bitmask, where the first bit gets rotated to the last place
 def rotate_left(bitmask: int) -> int:
     return ((bitmask << 1) & all_ones) | (bitmask >> (bit_mask_length - 1))
 
 
+# counts the number of bits, that two numbers have in common
 def count_same_bits(num1: int, num2: int) -> int:
     same_bits: int = ~(num1 ^ num2)
     count: int = bin(same_bits & all_ones).count('1')
     return count
 
 
+# given a hash (bitmask), construct a vector:
+# put +weight for all set bits of bitmask, put -weight for all unset bits of bitmask
+# into the vector at the position of the bit, we analyze
 def sim_hash_weighted(hsh: int, weight: int) -> np.ndarray:
     sim_hash_weight: np.ndarray = np.zeros(bit_mask_length, dtype=int)
     digit: int = bit_mask_length - 1
@@ -50,6 +57,8 @@ def sim_hash_weighted(hsh: int, weight: int) -> np.ndarray:
     return sim_hash_weight
 
 
+# translate the vector from the function-calls of "sim_hash_weighted" back to a bitmask
+# in our vector: all numbers > 0 -> set bit, all numbers < 0 -> unset bit
 def sim_hash_sum_to_bit_mask(sim_hash_sum: np.ndarray) -> int:
     bm: int = 0
     for digit in range(bit_mask_length):
@@ -87,10 +96,14 @@ def get_hunk_strings(hunk: unidiff.Hunk, w_context: int, w_body: int, rs: bool) 
 
 # create a dummy cherry commit to populate the git graph with unsampled, but known cherries
 def dummy_cherry_commit(commit_id: str, diff_marker: str) -> 'Commit':
-    # noinspection SpellCheckingInspection
     return Commit(f"\n{commit_id}\nA. Nonymous\n!!Dummy Commit!!\n{diff_marker}\n", diff_marker)
 
 
+# Commit: a class to store all information of a commit, we can gather from the git log parsing
+#         we also compute a bitmask-signature of its udiff (and commit message for binary files) for SimHash
+#         we only store parts of long udiff patches, see max_levenshtein_string_length,
+#         1. to limit memory_impact of giant commits
+#         2. to limit time comparisons of long udiff patches
 class Commit:
     date_id: int = 2 ** bit_mask_length  # the cherrypicks are sorted by date, we give them an ID by our processing order
     normal_weight: int = 1
@@ -115,7 +128,13 @@ class Commit:
         self.bit_mask: int = bit_mask
         self.neighbor_connections: list = []
 
-    # ugly parser of our git string
+    # an ugly parser of our git string, expects a string of the form
+    # parent_id
+    # commit_id
+    # author_name
+    # commit_message
+    # <DIFF_MARKER>
+    # udiff
     def parse_commit_str(self, commit_str: str, diff_marker: str):
         commit_str: list[str] = commit_str.split(diff_marker + "\n")
         if len(commit_str) != 2:
@@ -158,6 +177,8 @@ class Commit:
             patch_string = patch_string[:max_levenshtein_string_length // 2] + patch_string[-max_levenshtein_string_length // 2:]
         return '\n'.join(line for line in patch_string.splitlines() if not line.startswith("index "))
 
+    # we use Levenshtein-Similarity to compute the similarity of two texts
+    # we also judge it against a cutoff "min_levenshtein_similarity"
     def has_similar_text_to(self, neighbor: 'Commit') -> tuple[bool, Optional[float]]:
         if not self.parseable or not neighbor.parseable:
             return False, None
@@ -166,6 +187,8 @@ class Commit:
         similarity: float = textdistance.levenshtein.normalized_similarity(self.patch_string, neighbor.patch_string)
         return similarity >= min_levenshtein_similarity, similarity
 
+    # add a neighbor for our neighbor graph
+    # we expect edges of type: strong similarity (bitwise, levenshtein), explicit cherrypick, git-parent-relation
     def add_neighbor(self, neighbor_commit: 'Commit') -> None:
         # we don't need to add a neighbor twice
         if neighbor_commit.commit_id in [c.neighbor.commit_id for c in self.neighbor_connections]:
@@ -182,21 +205,25 @@ class Commit:
                                           explicit_cherrypick=explicit_cherrypick, is_child_of=is_child_of)
             self.neighbor_connections.append(neighbor)
 
-    def is_child_of(self, neighbor_commit: 'Commit') -> bool:
-        return self.parent_id == neighbor_commit.commit_id
+    # test if commit is git-child of other
+    def is_child_of(self, other_commit: 'Commit') -> bool:
+        return self.parent_id == other_commit.commit_id
 
+    # test if commit message features a "GitOrigin-RevId"
     def has_rev_id(self) -> bool:
         return re.search(git_origin_pattern, self.commit_message) is not None
 
+    # if a rev-id is present, return it
     def get_rev_id(self) -> Optional[str]:
         if not self.has_rev_id():
             return None
         return re.search(git_origin_pattern, self.commit_message).group(1)
 
-    # does the commit message claim it has a cherrypick?
+    # does the commit message claim an explicit cherrypick?
     def has_explicit_cherrypick(self):
         return re.search(cherry_commit_message_pattern, self.commit_message) is not None
 
+    # get all explicitly stated cherrypicks of the commit
     def get_explicit_cherrypicks(self) -> list[str]:
         if not self.has_explicit_cherrypick():
             return []
@@ -204,9 +231,12 @@ class Commit:
         flattened_matches: list[str] = [value for t in matches for value in t if value]
         return flattened_matches
 
+    # is the other commit part of the explicit list of cherries?
     def other_is_in_my_cherries(self, other_commit: 'Commit') -> bool:
         return other_commit.commit_id in self.explicit_cherries or other_commit.rev_id in self.explicit_cherries
 
+    # git log provides an ordering of commits, we parse commits in that order
+    # was self parsed before other_commit?
     def is_younger_than(self, other_commit: 'Commit') -> bool:
         return self.date > other_commit.date
 
@@ -253,7 +283,8 @@ class Commit:
             sim_hash_sum += sim_hash_weighted(hsh, weight)
         return sim_hash_sum_to_bit_mask(sim_hash_sum)
 
-
+# Neighbor: a class for the Neighbor-Graph
+# mostly used for the different edge types and edge weights
 @dataclass
 class Neighbor:
     neighbor: Commit
