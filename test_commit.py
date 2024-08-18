@@ -380,6 +380,15 @@ class Test(TestCase):
         neighbors += [commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=None, levenshtein_sim=None, explicit_cherrypick=True)]
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
+    def test_is_child_of(self):
+        child = commit.dummy_cherry_commit("child", "marker")
+        child.parent_id = "parent"
+        parent = commit.dummy_cherry_commit("parent", "marker")
+
+        self.assertFalse(child.is_child_of(child))
+        self.assertFalse(parent.is_child_of(parent))
+        self.assertTrue(child.is_child_of(parent))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="after online git-outputstream processing!">
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="caught up the tests">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/commit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/find_cherries.py" afterDir="false" />
@@ -78,7 +78,7 @@
       </set>
     </option>
   </component>
-  <component name="RunManager" selected="Python.find_cherries">
+  <component name="RunManager" selected="Python tests.Python tests for test_commit.Test.test_is_child_of">
     <configuration name="find_cherries" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
@@ -116,6 +116,21 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
+    <configuration name="Python tests for test_commit.Test.test_add_neighbor" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="diffour" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_commit.Test.test_add_neighbor&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
     <configuration name="Python tests for test_commit.Test.test_get_bit_mask" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
@@ -146,7 +161,7 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Python tests for test_commit.Test.test_get_weighted_diff" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+    <configuration name="Python tests for test_commit.Test.test_is_child_of" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -157,32 +172,17 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_commit.Test.test_get_weighted_diff&quot;" />
-      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
-      <method v="2" />
-    </configuration>
-    <configuration name="Python tests for test_commit.Test.test_init" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
-      <module name="diffour" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_commit.Test.test_init&quot;" />
+      <option name="_new_target" value="&quot;test_commit.Test.test_is_child_of&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python tests.Python tests for test_commit.Test.test_is_child_of" />
         <item itemvalue="Python tests.Python tests for test_commit.Test" />
+        <item itemvalue="Python tests.Python tests for test_commit.Test.test_add_neighbor" />
         <item itemvalue="Python tests.Python tests for test_commit.Test.test_get_hunk_strings" />
         <item itemvalue="Python tests.Python tests for test_commit.Test.test_get_bit_mask" />
-        <item itemvalue="Python tests.Python tests for test_commit.Test.test_get_weighted_diff" />
-        <item itemvalue="Python tests.Python tests for test_commit.Test.test_init" />
       </list>
     </recent_temporary>
   </component>
@@ -410,7 +410,23 @@
       <option name="project" value="LOCAL" />
       <updated>1723987197978</updated>
     </task>
-    <option name="localTasksCounter" value="27" />
+    <task id="LOCAL-00027" summary="added type hints everywhere">
+      <option name="closed" value="true" />
+      <created>1723994302412</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1723994302412</updated>
+    </task>
+    <task id="LOCAL-00028" summary="caught up the tests">
+      <option name="closed" value="true" />
+      <created>1723994612147</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1723994612147</updated>
+    </task>
+    <option name="localTasksCounter" value="29" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -425,8 +441,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="paralellizing stuff" />
-    <MESSAGE value="sim_hash-bit_masking integrated" />
     <MESSAGE value="better hash function" />
     <MESSAGE value="added shingle mingling" />
     <MESSAGE value="cherry_candidates found, now (identical + close candidates)" />
@@ -450,14 +464,16 @@
     <MESSAGE value="bit better parsing, tests caught up again" />
     <MESSAGE value="before online gitoutput-stream processing" />
     <MESSAGE value="after online git-outputstream processing!" />
-    <option name="LAST_COMMIT_MESSAGE" value="after online git-outputstream processing!" />
+    <MESSAGE value="added type hints everywhere" />
+    <MESSAGE value="caught up the tests" />
+    <option name="LAST_COMMIT_MESSAGE" value="caught up the tests" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/find_cherries.py</url>
-          <line>190</line>
+          <line>204</line>
           <option name="timeStamp" value="213" />
         </line-breakpoint>
       </breakpoints>

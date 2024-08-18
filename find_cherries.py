@@ -7,6 +7,7 @@ import commit
 import time
 from joblib import Parallel, delayed
 
+add_complete_parent_relation: bool = False  # activating this, the complete git graph can be restored (by parent relation), instead of only those commits, we find most relevant
 commit_limit: int = 100000
 repo_folder: str = "../data/cherry_repos/"
 save_folder: str = "cherry_data/"
@@ -15,7 +16,9 @@ diff_file: str = "diffs_" + str(commit_limit)
 commit_marker: str = "====xxx_next_commit_xxx===="
 diff_marker: str = "####xxx_next_diff_xxx####"
 pretty_format: str = commit_marker + "%n%P%n%H%n%an%n%s%b%n" + diff_marker
-command: str = f"git log --all --no-merges --date-order --pretty=format:\"{pretty_format}\" -p -U3 -n {commit_limit}"
+
+no_merges: str = "" if add_complete_parent_relation else " --no-merges"
+command: str = f"git log --all{no_merges} --date-order --pretty=format:\"{pretty_format}\" -p -U3 -n {commit_limit}"
 
 
 def init_git() -> None:
@@ -45,18 +48,18 @@ def parse_git_output(folder: str) -> list[commit.Commit]:
 def read_in_commits_from_stdout(process: subprocess.Popen) -> list[commit.Commit]:
     commits: list[commit.Commit] = []
     remnant: str = ""
-    commit_markern: str = commit_marker + "\n"
+    commit_marker_newline: str = commit_marker + "\n"
     while True:
-        chunk: str = process.stdout.read(2**20 * 10)  # Read up to 10MB at a time
+        chunk: str = process.stdout.read(2 ** 20 * 10)  # Read up to 10MB at a time
         if not chunk:
             commits.append(commit.Commit(remnant, diff_marker))
             break
-        if commit_markern not in chunk:
+        if commit_marker_newline not in chunk:
             continue
 
         # Prepend any leftover data from the previous chunk
         chunk = remnant + chunk
-        new_commits = chunk.split(commit_markern)
+        new_commits = chunk.split(commit_marker_newline)
         for nc in new_commits[:-1]:
             if nc:
                 commits.append(commit.Commit(nc, diff_marker))
@@ -143,15 +146,21 @@ def commits_to_csv(commits: list[commit.Commit]) -> str:
     for c in commits:
         for cn in c.neighbor_connections:
             if c.is_younger_than(cn.neighbor):
-                csv += f"{c.commit_id},{cn.neighbor.commit_id},{cn.sim},{cn.bit_sim},{cn.levenshtein_sim},{cn.explicit_cherrypick},{np.nan}\n"
+                csv += f"{c.commit_id},{cn.neighbor.commit_id},{cn.sim},{cn.bit_sim},{cn.levenshtein_sim},{cn.explicit_cherrypick},{np.nan},{cn.is_child_of}\n"
     return csv
 
 
 def save_cherries(commits: list[commit.Commit], project_name: str) -> None:
     os.makedirs(save_folder, exist_ok=True)
     with open(save_folder + project_name + "_" + str(commit_limit) + ".csv", 'w') as file:
-        file.write("picker,cherry,similar,bit_similarity,levenshtein_similarity,known_pick,patch_similarity\n")
+        file.write("tail(picker;ancestor),head(cherry;parent),similar,bit_similarity,levenshtein_similarity,picks_explicitly,patch_similarity,is_child_of\n")
         file.write(commits_to_csv(commits))
+
+
+def connect_parents(commits: list[commit.Commit], c_id_to_c: dict[str, commit.Commit]) -> None:
+    for c in commits:
+        if c.parent_id in c_id_to_c:
+            c.add_neighbor(c_id_to_c[c.parent_id])
 
 
 def analyze_repo(folder: str) -> None:
@@ -171,13 +180,18 @@ def analyze_repo(folder: str) -> None:
 
     connect_similar_neighbors(candidate_groups)
     connect_cherry_picks(commits, commit_id_to_commit)
-    # TODO: add parent relation (add merges back in)
-    # connect_parents(commits, commit_id_to_commit)
-    final_commits: list[commit.Commit] = remove_single_commits(commits)
+
+    if add_complete_parent_relation:
+        connect_parents(commits, commit_id_to_commit)
+        final_commits: list[commit.Commit] = remove_single_commits(commits)
+    else:
+        final_commits: list[commit.Commit] = remove_single_commits(commits)
+        connect_parents(final_commits, commit_id_to_commit)
 
     how_many_connections_are_known(final_commits, sh_folder)
 
     # TODO: for those without known connection: look within commit messages for words of length 40 (see git hash), print those out
+    # goal: find all other reference systems, people use
     # import re
     # git_hash40 = r"[a-fA-F0-9]{40}"
     # for c in final_commits:

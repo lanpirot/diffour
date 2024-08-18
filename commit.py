@@ -20,7 +20,7 @@ min_levenshtein_similarity: float = 0.75
 
 
 def is_similar_bitmask(bitmask1: int, bitmask2: int) -> tuple[bool, Optional[float]]:
-    if not bitmask1 or not bitmask2:
+    if bitmask1 is None or bitmask2 is None:
         return False, None
     same_bits: int = count_same_bits(bitmask1, bitmask2)
     bit_sim: float = same_bits / bit_mask_length
@@ -175,11 +175,15 @@ class Commit:
         text_sim, levenshtein_sim_level = self.has_similar_text_to(neighbor_commit)
         sim = bit_sim and text_sim
         explicit_cherrypick = self.other_is_in_my_cherries(neighbor_commit) or neighbor_commit.other_is_in_my_cherries(self)
+        is_child_of = self.is_child_of(neighbor_commit)
 
         if sim or explicit_cherrypick:
             neighbor: Neighbor = Neighbor(neighbor=neighbor_commit, sim=sim, bit_sim=bit_sim_level, levenshtein_sim=levenshtein_sim_level,
-                                          explicit_cherrypick=explicit_cherrypick)
+                                          explicit_cherrypick=explicit_cherrypick, is_child_of=is_child_of)
             self.neighbor_connections.append(neighbor)
+
+    def is_child_of(self, neighbor_commit: 'Commit') -> bool:
+        return self.parent_id == neighbor_commit.commit_id
 
     def has_rev_id(self) -> bool:
         return re.search(git_origin_pattern, self.commit_message) is not None
@@ -257,3 +261,4 @@ class Neighbor:
     bit_sim: float
     levenshtein_sim: float
     explicit_cherrypick: bool
+    is_child_of: bool
