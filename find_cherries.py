@@ -7,13 +7,12 @@ import commit
 import time
 from joblib import Parallel, delayed
 
-commit_limit: int = 1000
+commit_limit: int = 100000
 repo_folder: str = "../data/cherry_repos/"
 save_folder: str = "cherry_data/"
 diff_file: str = "diffs_" + str(commit_limit)
 
 commit_marker: str = "====xxx_next_commit_xxx===="
-commit_markern: str = commit_marker + "\n"
 diff_marker: str = "####xxx_next_diff_xxx####"
 pretty_format: str = commit_marker + "%n%P%n%H%n%an%n%s%b%n" + diff_marker
 command: str = f"git log --all --no-merges --date-order --pretty=format:\"{pretty_format}\" -p -U3 -n {commit_limit}"
@@ -46,6 +45,7 @@ def parse_git_output(folder: str) -> list[commit.Commit]:
 def read_in_commits_from_stdout(process: subprocess.Popen) -> list[commit.Commit]:
     commits: list[commit.Commit] = []
     remnant: str = ""
+    commit_markern: str = commit_marker + "\n"
     while True:
         chunk: str = process.stdout.read(2**20 * 10)  # Read up to 10MB at a time
         if not chunk:
@@ -75,7 +75,7 @@ def get_candidate_groups(commit_diffs: list[commit.Commit]) -> dict[int, set[com
 
     bit_masks_keys: list[int] = list(identical_commit_hashes.keys())
     # save the original bitmask
-    bit_masks: list[(int, int)] = [(bm, bm) for bm in bit_masks_keys]
+    bit_masks: list[tuple[int, int]] = [(bm, bm) for bm in bit_masks_keys]
     for i in range(commit.bit_mask_length):
         bit_masks = [(commit.rotate_left(bm[0]), bm[1]) for bm in bit_masks]
         bit_masks = sorted(bit_masks, key=lambda x: x[0])
@@ -92,13 +92,13 @@ def get_candidate_groups(commit_diffs: list[commit.Commit]) -> dict[int, set[com
     return candidate_groups
 
 
-def create_commit_id_to_commit(commits):
+def create_commit_id_to_commit(commits: list[commit.Commit]) -> dict[str, commit.Commit]:
     return {c.commit_id: c for c in commits}
 
 
-def connect_similar_neighbors(candidate_groups):
+def connect_similar_neighbors(candidate_groups: dict[int, set[commit.Commit]]) -> None:
     for cg in candidate_groups.values():
-        lcg = list(cg)
+        lcg: list[commit.Commit] = list(cg)
         for i in range(len(lcg) - 1):
             for j in range(i + 1, len(lcg)):
                 mi, ma = lcg[i].get_ordered_commit_pair(lcg[j])
@@ -106,10 +106,11 @@ def connect_similar_neighbors(candidate_groups):
                 ma.add_neighbor(mi)
 
 
-def connect_cherry_picks(commit_diffs, c_id_to_c):
+def connect_cherry_picks(commit_diffs: list[commit.Commit], c_id_to_c: dict[str, commit.Commit]) -> None:
     for cd in commit_diffs:
         if cd.has_explicit_cherrypick():
             for cherry_id in cd.explicit_cherries:
+                cherry: commit.Commit
                 if cherry_id in c_id_to_c:
                     cherry = c_id_to_c[cherry_id]
                 else:
@@ -119,12 +120,13 @@ def connect_cherry_picks(commit_diffs, c_id_to_c):
                 cherry.add_neighbor(cd)
 
 
-def remove_single_commits(commit_diffs):
+def remove_single_commits(commit_diffs: list[commit.Commit]) -> list[commit.Commit]:
     return [cd for cd in commit_diffs if cd.neighbor_connections]
 
 
-def how_many_connections_are_known(commit_diffs, folder):
-    known, unknown = 0, 0
+def how_many_connections_are_known(commit_diffs: list[commit.Commit], folder: str) -> None:
+    known: int = 0
+    unknown: int = 0
     for cd in commit_diffs:
         for nc in cd.neighbor_connections:
             if nc.explicit_cherrypick:
@@ -136,8 +138,8 @@ def how_many_connections_are_known(commit_diffs, folder):
 
 
 # only save connections from younger commit to older commit (direction of picking), their similarities, whether they have a known connection
-def commits_to_csv(commits):
-    csv = ""
+def commits_to_csv(commits: list[commit.Commit]) -> str:
+    csv: str = ""
     for c in commits:
         for cn in c.neighbor_connections:
             if c.is_younger_than(cn.neighbor):
@@ -145,33 +147,33 @@ def commits_to_csv(commits):
     return csv
 
 
-def save_cherries(commits, project_name):
+def save_cherries(commits: list[commit.Commit], project_name: str) -> None:
     os.makedirs(save_folder, exist_ok=True)
     with open(save_folder + project_name + "_" + str(commit_limit) + ".csv", 'w') as file:
         file.write("picker,cherry,similar,bit_similarity,levenshtein_similarity,known_pick,patch_similarity\n")
         file.write(commits_to_csv(commits))
 
 
-def analyze_repo(folder):
-    job_start_time = time.time()
-    sh_folder = folder.split("/")[-1]
+def analyze_repo(folder: str) -> None:
+    job_start_time: float = time.time()
+    sh_folder: str = folder.split("/")[-1]
     print(f"Working on {sh_folder} ...")
     # TODO: file_rename_scheme = get_rename_scheme(folder)
-    commits = parse_git_output(folder)
-    commit_id_to_commit = create_commit_id_to_commit(commits)
+    commits: list[commit.Commit] = parse_git_output(folder)
+    commit_id_to_commit: dict[str, commit.Commit] = create_commit_id_to_commit(commits)
 
     # remove non-parseable commits
-    parseable_commits = [cd for cd in commits if cd.parseable]
+    parseable_commits: list[commit.Commit] = [cd for cd in commits if cd.parseable]
     print(f"{sh_folder}: #parseable {len(parseable_commits)} of {len(commits)} commits, "
           f"#explicit pickers: {sum([1 for cd in parseable_commits if cd.has_explicit_cherrypick()])}")
 
-    candidate_groups = get_candidate_groups(parseable_commits)
+    candidate_groups: dict[int, set[commit.Commit]] = get_candidate_groups(parseable_commits)
 
     connect_similar_neighbors(candidate_groups)
     connect_cherry_picks(commits, commit_id_to_commit)
     # TODO: add parent relation (add merges back in)
     # connect_parents(commits, commit_id_to_commit)
-    final_commits = remove_single_commits(commits)
+    final_commits: list[commit.Commit] = remove_single_commits(commits)
 
     how_many_connections_are_known(final_commits, sh_folder)
 
@@ -187,22 +189,21 @@ def analyze_repo(folder):
     #             print(c.commit_id, "\n", c.commit_message, "\n\n\n", nn.commit_id, "\n", nn.commit_message, "\n\n\n")
     save_cherries(final_commits, sh_folder)
     pass
-    job_end_time = time.time()
+    job_end_time: float = time.time()
     print(f"{sh_folder}: Execution time: {job_end_time - job_start_time:.1f} seconds")
 
 
 if __name__ == '__main__':
-    subfolders = os.walk(repo_folder).__next__()[1]
-    subfolders = [repo_folder + folder for folder in subfolders]
+    subfolders: list[str] = os.walk(repo_folder).__next__()[1]
+    subfolders: list[str] = [repo_folder + folder for folder in subfolders]
 
-    full_sample = True
+    full_sample: bool = True
 
     if full_sample:
-        start_time = time.time()
+        start_time: float = time.time()
         Parallel(n_jobs=-1)(delayed(analyze_repo)(repo) for repo in subfolders)
-        end_time = time.time()
+        end_time: float = time.time()
         print(f"Execution time: {end_time - start_time:.1f} seconds")
     else:
-        # subfolder = repo_folder + "intellij-community"
-        subfolder = repo_folder + "WebKit"
+        subfolder: str = repo_folder + "WebKit"
         analyze_repo(subfolder)
