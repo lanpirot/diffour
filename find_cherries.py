@@ -128,7 +128,7 @@ def connect_similar_neighbors(candidate_groups):
                 ma.add_neighbor(mi)
 
 
-def add_known_cherry_picks_to_graph(commit_diffs, c_id_to_c):
+def connect_cherry_picks(commit_diffs, c_id_to_c):
     for cd in commit_diffs:
         if cd.has_explicit_cherrypick():
             for cherry_id in cd.explicit_cherries:
@@ -142,11 +142,7 @@ def add_known_cherry_picks_to_graph(commit_diffs, c_id_to_c):
 
 
 def remove_single_commits(commit_diffs):
-    cds = []
-    for cd in commit_diffs:
-        if cd.neighbor_connections:
-            cds.append(cd)
-    return cds
+    return [cd for cd in commit_diffs if cd.neighbor_connections]
 
 
 def how_many_connections_are_known(commit_diffs, folder):
@@ -196,10 +192,12 @@ def analyze_repo(folder):
     candidate_groups = get_candidate_groups(parseable_commits)
 
     connect_similar_neighbors(candidate_groups)
-    add_known_cherry_picks_to_graph(commits, commit_id_to_commit)
-    final_commits = remove_single_commits(commits)
-    how_many_connections_are_known(final_commits, sh_folder)
+    connect_cherry_picks(commits, commit_id_to_commit)
     # TODO: add parent relation (add merges back in)
+    # connect_parents(commits, commit_id_to_commit)
+    final_commits = remove_single_commits(commits)
+
+    how_many_connections_are_known(final_commits, sh_folder)
 
     # TODO: for those without known connection: look within commit messages for words of length 40 (see git hash), print those out
     # import re
