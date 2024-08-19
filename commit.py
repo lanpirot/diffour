@@ -14,9 +14,9 @@ cherry_commit_message_pattern: str = rf"\(cherry picked from commit ({git_hash40
 git_origin_pattern: str = rf"GitOrigin-RevId: ({git_hash40})"
 max_levenshtein_string_length: int = 10 ** 4
 
-max_bit_diff: int = 4
+max_bit_diff: int = 5
 min_bit_similarity: float = (bit_mask_length - max_bit_diff) / bit_mask_length
-min_levenshtein_similarity: float = 0.75
+min_levenshtein_similarity: float = 0.7
 
 
 # computes the similarity (and judges it against our cutoff "min_bit_similarity") of two bitmasks
@@ -112,7 +112,7 @@ class Commit:
         self.date: int = self.__class__.date_id
         self.__class__.date_id -= 1
 
-        (parent_ids, commit_id, author, commit_message, patch_string, parseable, bit_mask) = self.parse_commit_str(commit_str, diff_marker)
+        (parent_ids, commit_id, author, commit_message, patch_string, parseable, bit_mask, hsh) = self.parse_commit_str(commit_str, diff_marker)
 
         self.commit_message: str = commit_message
         self.author: str = author
@@ -124,6 +124,7 @@ class Commit:
         self.patch_string: str = patch_string
         self.parseable: bool = parseable
         self.bit_mask: int = bit_mask
+        self.hsh: int = hsh
         self.neighbor_connections: list = []
 
     # an ugly parser of our git string, expects a string of the form
@@ -153,6 +154,7 @@ class Commit:
 
         patch_string: Optional[str]
         bit_mask: Optional[int]
+        hsh: Optional[int]
         parseable: bool
         try:
             patch_set: unidiff.PatchSet = unidiff.PatchSet(commit_diff)
@@ -160,13 +162,15 @@ class Commit:
                 raise unidiff.UnidiffParseError
             # we compute the bitmask here, so we can forget the whole patch_string right away
             bit_mask = self.get_bit_mask(patch_set, commit_message)
+            hsh = hash(patch_set.__str__())
             patch_string = self.clean_patch_string(patch_set.__str__())
             parseable = True
         except unidiff.UnidiffParseError:
             parseable = False
             bit_mask = None
+            hsh = None
             patch_string = None
-        return parent_ids, commit_id, author, commit_message, patch_string, parseable, bit_mask
+        return parent_ids, commit_id, author, commit_message, patch_string, parseable, bit_mask, hsh
 
     # we remove the index line of a patch-diff (it states the hashsum of a file, which is okay to differ)
     # we also limit the maximal string length to avoid system crashes, and get some speed

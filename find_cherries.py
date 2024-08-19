@@ -1,4 +1,5 @@
 import os
+import gc
 import subprocess
 import numpy as np
 import re
@@ -16,10 +17,10 @@ from joblib import Parallel, delayed
 #       5. compute a weighted SimHash of the udiff (put commits into buckets based on their SimHash signature)
 #       6. rotate, resort buckets, find close neighbors and unionize those buckets
 #       7. within each bucket: compare Levenshtein-similarity of all members
-#       8. compute graph with edge types:
+#       8. compute graph with edge types: all directed edges are young->old
 #           - explicit_cherry_pick (directed)
 #           - git_child_and_parent (directed)
-#           - highly_similar_commits (undirected, weight1: bit_similarity, weight2: Levenshtein_similarity)
+#           - highly_similar_commits (directed, weight1: bit_similarity, weight2: Levenshtein_similarity)
 
 full_sample: bool = True  # a complete run, or only a test run with a small sample size?
 add_complete_parent_relation: bool = False  # store complete git graph (by parent relation), or only parent-relation for relevant nodes?
@@ -210,12 +211,8 @@ def analyze_repo(folder: str) -> None:
                                                            range(len(unparseable_commits))}
     candidate_groups = {**candidate_groups, **non_parseable_groups}
 
-    # TODO: speedup: bucketize within buckets (two sim_hashes for each commit)
-    # TODO: speedup: bucketize within buckets (unionize 1.0 similar items)
-    connect_cherry_picks(commits, commit_id_to_commit)
     connect_similar_neighbors(candidate_groups)
-
-
+    connect_cherry_picks(commits, commit_id_to_commit)
     if add_complete_parent_relation:
         connect_parents(commits, commit_id_to_commit)
     else:
@@ -242,7 +239,6 @@ def analyze_repo(folder: str) -> None:
 
 
 if __name__ == '__main__':
-    import gc
     gc.collect()
     subfolders: list[str] = os.walk(repo_folder).__next__()[1]
     subfolders: list[str] = [repo_folder + folder for folder in subfolders]
