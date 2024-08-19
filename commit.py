@@ -34,7 +34,6 @@ def rotate_left(bitmask: int) -> int:
     return ((bitmask << 1) & all_ones) | (bitmask >> (bit_mask_length - 1))
 
 
-# counts the number of bits, that two numbers have in common
 def count_same_bits(num1: int, num2: int) -> int:
     same_bits: int = ~(num1 ^ num2)
     count: int = bin(same_bits & all_ones).count('1')
@@ -74,7 +73,7 @@ def mingle_shingles(wdiff: list[tuple[str, int]], n: int) -> list[tuple[str, int
 
 
 # the unidiff lib cuts off the leading - and + of the hunk body
-# add it back in to not confuse "- print()" with "+ print()"
+# add it back in to not confuse "- print()" with "+ print()" lines
 def get_hunk_strings(hunk: unidiff.Hunk, w_context: int, w_body: int, rs: bool) -> list[tuple[str, int]]:
     ret = []
     for hunk_line in hunk:
@@ -94,7 +93,7 @@ def get_hunk_strings(hunk: unidiff.Hunk, w_context: int, w_body: int, rs: bool) 
     return ret
 
 
-# create a dummy cherry commit to populate the git graph with unsampled, but known cherries
+# create a dummy cherry commit to populate the git graph with cherries we did not sample, but know of
 def dummy_cherry_commit(commit_id: str, diff_marker: str) -> 'Commit':
     return Commit(f"\n{commit_id}\nA. Nonymous\n!!Dummy Commit!!\n{diff_marker}\n", diff_marker)
 
@@ -187,7 +186,7 @@ class Commit:
         similarity: float = textdistance.levenshtein.normalized_similarity(self.patch_string, neighbor.patch_string)
         return similarity >= min_levenshtein_similarity, similarity
 
-    # add a neighbor for our neighbor graph
+    # add a neighbor edge for our neighbor graph
     # we expect edges of type: strong similarity (bitwise, levenshtein), explicit cherrypick, git-parent-relation
     def add_neighbor(self, neighbor_commit: 'Commit') -> None:
         # we don't need to add a neighbor twice
@@ -205,7 +204,6 @@ class Commit:
                                           explicit_cherrypick=explicit_cherrypick, is_child_of=is_child_of)
             self.neighbor_connections.append(neighbor)
 
-    # test if commit is git-child of other
     def is_child_of(self, other_commit: 'Commit') -> bool:
         return self.parent_id == other_commit.commit_id
 
@@ -213,17 +211,14 @@ class Commit:
     def has_rev_id(self) -> bool:
         return re.search(git_origin_pattern, self.commit_message) is not None
 
-    # if a rev-id is present, return it
     def get_rev_id(self) -> Optional[str]:
         if not self.has_rev_id():
             return None
         return re.search(git_origin_pattern, self.commit_message).group(1)
 
-    # does the commit message claim an explicit cherrypick?
     def has_explicit_cherrypick(self):
         return re.search(cherry_commit_message_pattern, self.commit_message) is not None
 
-    # get all explicitly stated cherrypicks of the commit
     def get_explicit_cherrypicks(self) -> list[str]:
         if not self.has_explicit_cherrypick():
             return []
@@ -231,7 +226,6 @@ class Commit:
         flattened_matches: list[str] = [value for t in matches for value in t if value]
         return flattened_matches
 
-    # is the other commit part of the explicit list of cherries?
     def other_is_in_my_cherries(self, other_commit: 'Commit') -> bool:
         return other_commit.commit_id in self.explicit_cherries or other_commit.rev_id in self.explicit_cherries
 
@@ -283,8 +277,9 @@ class Commit:
             sim_hash_sum += sim_hash_weighted(hsh, weight)
         return sim_hash_sum_to_bit_mask(sim_hash_sum)
 
-# Neighbor: a class for the Neighbor-Graph
-# mostly used for the different edge types and edge weights
+
+# Neighbor: a class for the edges of our Neighbor-Graph
+# used for the different edge types and edge weights
 @dataclass
 class Neighbor:
     neighbor: Commit

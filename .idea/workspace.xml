@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="added parent relation (not tested yet)">
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="added tons of comments">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/commit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/find_cherries.py" afterDir="false" />
@@ -68,6 +68,7 @@
     "Python.main.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "master",
+    "ignore.virus.scanning.warn.message": "true",
     "settings.editor.selected.configurable": "editor.preferences.folding"
   }
 }]]></component>
@@ -435,7 +436,15 @@
       <option name="project" value="LOCAL" />
       <updated>1723998448653</updated>
     </task>
-    <option name="localTasksCounter" value="30" />
+    <task id="LOCAL-00030" summary="added tons of comments">
+      <option name="closed" value="true" />
+      <created>1724002005095</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1724002005095</updated>
+    </task>
+    <option name="localTasksCounter" value="31" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -450,7 +459,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="added shingle mingling" />
     <MESSAGE value="cherry_candidates found, now (identical + close candidates)" />
     <MESSAGE value="sort into cherry pairs and candidate pairs" />
     <MESSAGE value="started adding tests" />
@@ -475,14 +483,15 @@
     <MESSAGE value="added type hints everywhere" />
     <MESSAGE value="caught up the tests" />
     <MESSAGE value="added parent relation (not tested yet)" />
-    <option name="LAST_COMMIT_MESSAGE" value="added parent relation (not tested yet)" />
+    <MESSAGE value="added tons of comments" />
+    <option name="LAST_COMMIT_MESSAGE" value="added tons of comments" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/find_cherries.py</url>
-          <line>235</line>
+          <line>234</line>
           <option name="timeStamp" value="213" />
         </line-breakpoint>
       </breakpoints>

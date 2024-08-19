@@ -184,7 +184,6 @@ def commits_to_csv(commits: list[commit.Commit]) -> str:
     return csv
 
 
-# save the graph to disk
 def save_graph(commits: list[commit.Commit], project_name: str) -> None:
     os.makedirs(save_folder, exist_ok=True)
     with open(save_folder + project_name + "_" + str(commit_limit) + ".csv", 'w') as file:
@@ -192,7 +191,7 @@ def save_graph(commits: list[commit.Commit], project_name: str) -> None:
         file.write(commits_to_csv(commits))
 
 
-# main loop, works in order as described above
+# main loop
 def analyze_repo(folder: str) -> None:
     job_start_time: float = time.time()
     sh_folder: str = folder.split("/")[-1]
@@ -208,18 +207,18 @@ def analyze_repo(folder: str) -> None:
 
     candidate_groups: dict[int, set[commit.Commit]] = get_candidate_groups(parseable_commits)
 
+    # TODO: speedup: bucketize within buckets
     connect_similar_neighbors(candidate_groups)
     connect_cherry_picks(commits, commit_id_to_commit)
 
+    final_commits: list[commit.Commit] = remove_single_commits(commits)
     if add_complete_parent_relation:
         connect_parents(commits, commit_id_to_commit)
-        final_commits: list[commit.Commit] = remove_single_commits(commits)
     else:
-        final_commits: list[commit.Commit] = remove_single_commits(commits)
         connect_parents(final_commits, commit_id_to_commit)
 
     how_many_connections_are_known(final_commits, sh_folder)
-    # TODO: why are some known cherry pickers not in the final_commits or have wrong edge type?
+    # TODO: why are some known cherry pickers not in the final_commits or have wrong edge type? sometimes more, sometimes less
 
     # TODO: for those without known connection: look within commit messages for words of length 40 (see git hash), print those out
     # goal: find all other reference systems, people use
@@ -238,7 +237,6 @@ def analyze_repo(folder: str) -> None:
     print(f"{sh_folder}: Execution time: {job_end_time - job_start_time:.1f} seconds")
 
 
-# outer call starting a subprocess for each repository
 if __name__ == '__main__':
     subfolders: list[str] = os.walk(repo_folder).__next__()[1]
     subfolders: list[str] = [repo_folder + folder for folder in subfolders]
