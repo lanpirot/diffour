@@ -140,7 +140,7 @@ class Test(TestCase):
             self.assertEqual(c.explicit_cherries, [])
             self.assertTrue(len(c.commit_id) == 40)
             self.assertEqual(c.is_root, False)
-            self.assertTrue(len(c.parent_id) == 40)
+            self.assertTrue(len(c.parent_ids[0]) == 40)
             self.assertEqual(c.parseable, True)
             self.assertTrue(len(c.patch_string) > 0)
             self.assertTrue(c.rev_id is None or len(c.rev_id) == 40)
@@ -157,7 +157,7 @@ class Test(TestCase):
             self.assertEqual(c.commit_id, "commitID")
             self.assertTrue(len(c.commit_message.splitlines()) > 3)
             self.assertEqual(c.is_root, False)
-            self.assertEqual(c.parent_id, "parentID")
+            self.assertEqual(c.parent_ids, ["parentID"])
             self.assertEqual(c.parseable, True)
             self.assertEqual(c.rev_id, "33299ac78503b3871b4a04f9def02497848eef57")
 
@@ -351,38 +351,42 @@ class Test(TestCase):
         dummy.bit_mask = 1
         dummy.patch_string = self.dummy_diff
         self.assertEqual([], dummy.neighbor_connections)
-        dummy.add_neighbor(dummy)
-        neighbors = [commit.Neighbor(neighbor=dummy, sim=True, bit_sim=1.0, levenshtein_sim=1.0, explicit_cherrypick=False)]
+        dummy.add_neighbor(dummy, False)
+        neighbors = [commit.Neighbor(neighbor=dummy, sim=True, bit_sim=1.0, levenshtein_sim=1.0, explicit_cherrypick=False, is_child_of=False)]
         self.assertEqual(neighbors, dummy.neighbor_connections)
-        dummy.add_neighbor(dummy)
+        dummy.add_neighbor(dummy, False)
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
         neighbor = commit.dummy_cherry_commit("neighbor", "marker")
         neighbor.parseable = True
         neighbor.bit_mask = 3
         neighbor.patch_string = self.dummy_diff
-        dummy.add_neighbor(neighbor)
-        neighbors += [commit.Neighbor(neighbor=neighbor, sim=True, bit_sim=63 / 64, levenshtein_sim=1.0, explicit_cherrypick=False)]
+        dummy.add_neighbor(neighbor, False)
+        neighbors += [commit.Neighbor(neighbor=neighbor, sim=True, bit_sim=63 / 64, levenshtein_sim=1.0, explicit_cherrypick=False, is_child_of=False)]
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
+        # add same neighbor: nothing should change
         other_neighbor = commit.dummy_cherry_commit("neighbor", "marker")
         other_neighbor.explicit_cherries = [dummy.commit_id]
-        dummy.add_neighbor(other_neighbor)
+        dummy.add_neighbor(other_neighbor, False)
         self.assertEqual(neighbors, dummy.neighbor_connections)
+
+        # add another neighbor, it should be added again
         other_neighbor.commit_id = "other_neighbor"
-        dummy.add_neighbor(other_neighbor)
-        neighbors += [commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=None, levenshtein_sim=None, explicit_cherrypick=True)]
+        dummy.explicit_cherries = [other_neighbor.commit_id]
+        dummy.add_neighbor(other_neighbor, False)
+        neighbors += [commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=None, levenshtein_sim=None, explicit_cherrypick=True, is_child_of=False)]
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
         other_neighbor = commit.dummy_cherry_commit("last neighbor", "marker")
         dummy.explicit_cherries = [other_neighbor.commit_id]
-        dummy.add_neighbor(other_neighbor)
-        neighbors += [commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=None, levenshtein_sim=None, explicit_cherrypick=True)]
+        dummy.add_neighbor(other_neighbor, False)
+        neighbors += [commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=None, levenshtein_sim=None, explicit_cherrypick=True, is_child_of=False)]
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
     def test_is_child_of(self):
         child = commit.dummy_cherry_commit("child", "marker")
-        child.parent_id = "parent"
+        child.parent_ids = ["parent"]
         parent = commit.dummy_cherry_commit("parent", "marker")
 
         self.assertFalse(child.is_child_of(child))

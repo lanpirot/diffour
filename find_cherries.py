@@ -21,9 +21,9 @@ from joblib import Parallel, delayed
 #           - git_child_and_parent (directed)
 #           - highly_similar_commits (undirected, weight1: bit_similarity, weight2: Levenshtein_similarity)
 
-full_sample: bool = False                    # a complete run, or only a test run with a small sample size?
+full_sample: bool = True  # a complete run, or only a test run with a small sample size?
 add_complete_parent_relation: bool = False  # store complete git graph (by parent relation), or only parent-relation for relevant nodes?
-commit_limit: int = 100000                  # max number of commits of a repository, we sample
+commit_limit: int = 1000  # max number of commits of a repository, we sample
 
 repo_folder: str = "../data/cherry_repos/"
 save_folder: str = "cherry_data/"
@@ -129,8 +129,7 @@ def connect_similar_neighbors(candidate_groups: dict[int, set[commit.Commit]]) -
         for i in range(len(lcg) - 1):
             for j in range(i + 1, len(lcg)):
                 mi, ma = lcg[i].get_ordered_commit_pair(lcg[j])
-                mi.add_neighbor(ma)
-                ma.add_neighbor(mi)
+                ma.add_neighbor(mi, False)
 
 
 # add a connection to our graph for each picker and its cherries
@@ -144,15 +143,15 @@ def connect_cherry_picks(commit_diffs: list[commit.Commit], c_id_to_c: dict[str,
                 else:
                     cherry = commit.dummy_cherry_commit(cherry_id, diff_marker)
                     # it would be cleaner to add dummies to the c_id_to_c lookup table
-                cd.add_neighbor(cherry)
-                cherry.add_neighbor(cd)
+                cd.add_neighbor(cherry, False)
 
 
 # add a connection to our graph for each parent and child, based on git commit ids and their parent-relation
 def connect_parents(commits: list[commit.Commit], c_id_to_c: dict[str, commit.Commit]) -> None:
     for c in commits:
-        if c.parent_id in c_id_to_c:
-            c.add_neighbor(c_id_to_c[c.parent_id])
+        for p in c.parent_ids:
+            if p in c_id_to_c:
+                c.add_neighbor(c_id_to_c[p], True)
 
 
 # remove all commits without a neighbor. they are a bit boring for our purposes
@@ -162,16 +161,14 @@ def remove_single_commits(commit_diffs: list[commit.Commit]) -> list[commit.Comm
 
 # give a report about our graph and its edges
 def how_many_connections_are_known(commit_diffs: list[commit.Commit], folder: str) -> None:
-    known: int = 0
+    picks: int = 0
+    children: int = 0
     unknown: int = 0
     for cd in commit_diffs:
-        for nc in cd.neighbor_connections:
-            if nc.explicit_cherrypick:
-                known += 1
-            else:
-                unknown += 1
-    known, unknown = known // 2, unknown // 2
-    print(f"{folder}: Known connections (cherry and picker): {known}, unknown: {unknown}")
+        picks += sum([1 for n in cd.neighbor_connections if n.explicit_cherrypick])
+        children += sum([1 for n in cd.neighbor_connections if n.is_child_of])
+        unknown += sum([1 for n in cd.neighbor_connections if not (n.explicit_cherrypick or n.is_child_of)])
+    print(f"{folder}: Known connections: picker->cherry {picks}, child->parent {children};  unknown: {unknown}")
 
 
 # only save connections from younger commit (picker, child) to older commit (cherry, parent), their similarities, whether they have a known connection
@@ -187,7 +184,8 @@ def commits_to_csv(commits: list[commit.Commit]) -> str:
 def save_graph(commits: list[commit.Commit], project_name: str) -> None:
     os.makedirs(save_folder, exist_ok=True)
     with open(save_folder + project_name + "_" + str(commit_limit) + ".csv", 'w') as file:
-        file.write("tail(picker;child),head(cherry;parent),similar,bit_similarity,levenshtein_similarity,picks_explicitly,patch_similarity,is_child_of\n")
+        file.write(
+            "tail(picker;child),head(cherry;parent),similar,bit_similarity,levenshtein_similarity,picks_explicitly,patch_similarity,is_child_of\n")
         file.write(commits_to_csv(commits))
 
 
@@ -202,24 +200,30 @@ def analyze_repo(folder: str) -> None:
 
     # remove non-parseable commits
     parseable_commits: list[commit.Commit] = [cd for cd in commits if cd.parseable]
+    unparseable_commits: list[commit.Commit] = [cd for cd in commits if not cd.parseable]
     print(f"{sh_folder}: #parseable {len(parseable_commits)} of {len(commits)} commits, "
-          f"#explicit pickers: {sum([1 for cd in parseable_commits if cd.has_explicit_cherrypick()])}")
+          f"#explicit pickers: {sum([1 for cd in parseable_commits if cd.has_explicit_cherrypick()])}, "
+          f"#explicit picks: {sum([len(c.get_explicit_cherrypicks()) for c in commits if c.has_explicit_cherrypick()])}")
 
     candidate_groups: dict[int, set[commit.Commit]] = get_candidate_groups(parseable_commits)
+    non_parseable_groups: dict[int, set[commit.Commit]] = {2 ** commit.bit_mask_length + i: {unparseable_commits[i]} for i in
+                                                           range(len(unparseable_commits))}
+    candidate_groups = {**candidate_groups, **non_parseable_groups}
 
-    # TODO: speedup: bucketize within buckets
-    connect_similar_neighbors(candidate_groups)
+    # TODO: speedup: bucketize within buckets (two sim_hashes for each commit)
+    # TODO: speedup: bucketize within buckets (unionize 1.0 similar items)
     connect_cherry_picks(commits, commit_id_to_commit)
+    connect_similar_neighbors(candidate_groups)
 
-    final_commits: list[commit.Commit] = remove_single_commits(commits)
+
     if add_complete_parent_relation:
         connect_parents(commits, commit_id_to_commit)
     else:
-        connect_parents(final_commits, commit_id_to_commit)
+        final_commits: list[commit.Commit] = remove_single_commits(commits)
+        f_commit_id_to_commit: dict[str, commit.Commit] = create_commit_id_to_commit(final_commits)
+        connect_parents(final_commits, f_commit_id_to_commit)
 
-    how_many_connections_are_known(final_commits, sh_folder)
-    # TODO: why are some known cherry pickers not in the final_commits or have wrong edge type? sometimes more, sometimes less
-
+    how_many_connections_are_known(commits, sh_folder)
     # TODO: for those without known connection: look within commit messages for words of length 40 (see git hash), print those out
     # goal: find all other reference systems, people use
     # import re
@@ -231,13 +235,15 @@ def analyze_repo(folder: str) -> None:
     #         nn = n.neighbor
     #         if re.search(git_hash40, c.commit_message) or re.search(git_hash40, nn.commit_message):
     #             print(c.commit_id, "\n", c.commit_message, "\n\n\n", nn.commit_id, "\n", nn.commit_message, "\n\n\n")
-    save_graph(final_commits, sh_folder)
+    save_graph(commits, sh_folder)
     pass
     job_end_time: float = time.time()
     print(f"{sh_folder}: Execution time: {job_end_time - job_start_time:.1f} seconds")
 
 
 if __name__ == '__main__':
+    import gc
+    gc.collect()
     subfolders: list[str] = os.walk(repo_folder).__next__()[1]
     subfolders: list[str] = [repo_folder + folder for folder in subfolders]
 
@@ -247,5 +253,5 @@ if __name__ == '__main__':
         end_time: float = time.time()
         print(f"Execution time: {end_time - start_time:.1f} seconds")
     else:
-        subfolder: str = repo_folder + "odoo"
+        subfolder: str = repo_folder + "pydriller"
         analyze_repo(subfolder)

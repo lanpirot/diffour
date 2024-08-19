@@ -7,7 +7,6 @@ import numpy as np
 import mmh3
 from dataclasses import dataclass
 
-
 bit_mask_length: int = 64
 all_ones: int = 2 ** bit_mask_length - 1
 git_hash40: str = "[a-fA-F0-9]{40}"
@@ -113,13 +112,13 @@ class Commit:
         self.date: int = self.__class__.date_id
         self.__class__.date_id -= 1
 
-        (parent_id, commit_id, author, commit_message, patch_string, parseable, bit_mask) = self.parse_commit_str(commit_str, diff_marker)
+        (parent_ids, commit_id, author, commit_message, patch_string, parseable, bit_mask) = self.parse_commit_str(commit_str, diff_marker)
 
         self.commit_message: str = commit_message
         self.author: str = author
-        self.parent_id: str = parent_id
+        self.parent_ids: list[str] = parent_ids
         self.commit_id: str = commit_id
-        self.is_root: bool = len(self.parent_id) == 0
+        self.is_root: bool = len(self.parent_ids) == 0
         self.rev_id: Optional[str] = self.get_rev_id()
         self.explicit_cherries: list = self.get_explicit_cherrypicks()
         self.patch_string: str = patch_string
@@ -144,7 +143,9 @@ class Commit:
 
         if len(commit_header) < 4:
             raise ValueError
-        (parent_id, commit_id, author, commit_message) = (commit_header[0], commit_header[1], commit_header[2], commit_header[3:][0])
+        (parent_idstring, commit_id, author, commit_message) = (commit_header[0], commit_header[1], commit_header[2], commit_header[3:][0])
+        parent_ids: list[str] = parent_idstring.split(" ")
+        parent_ids = [p for p in parent_ids if len(p) > 0]
 
         commit_diff: str = commit_str[1]
         if len(commit_diff) > 1 and commit_diff[-2] == commit_diff[-1] == "\n":
@@ -165,7 +166,7 @@ class Commit:
             parseable = False
             bit_mask = None
             patch_string = None
-        return parent_id, commit_id, author, commit_message, patch_string, parseable, bit_mask
+        return parent_ids, commit_id, author, commit_message, patch_string, parseable, bit_mask
 
     # we remove the index line of a patch-diff (it states the hashsum of a file, which is okay to differ)
     # we also limit the maximal string length to avoid system crashes, and get some speed
@@ -183,29 +184,38 @@ class Commit:
             return False, None
         if len(self.patch_string) * 2 < len(neighbor.patch_string) or len(self.patch_string) > len(neighbor.patch_string) * 2:
             return False, 0
+        # TODO: Match first half first, see if high score is achieved, only then match second half
         similarity: float = textdistance.levenshtein.normalized_similarity(self.patch_string, neighbor.patch_string)
         return similarity >= min_levenshtein_similarity, similarity
 
+    def already_neighbors(self, other):
+        return other.commit_id in [c.neighbor.commit_id for c in self.neighbor_connections] or self.commit_id in [c.neighbor.commit_id for c in
+                                                                                                                  other.neighbor_connections]
+
     # add a neighbor edge for our neighbor graph
     # we expect edges of type: strong similarity (bitwise, levenshtein), explicit cherrypick, git-parent-relation
-    def add_neighbor(self, neighbor_commit: 'Commit') -> None:
+    def add_neighbor(self, other: 'Commit', connect_children) -> None:
         # we don't need to add a neighbor twice
-        if neighbor_commit.commit_id in [c.neighbor.commit_id for c in self.neighbor_connections]:
+        if self.already_neighbors(other):
             return
 
-        bit_sim, bit_sim_level = is_similar_bitmask(self.bit_mask, neighbor_commit.bit_mask)
-        text_sim, levenshtein_sim_level = self.has_similar_text_to(neighbor_commit)
+        is_child_of = self.is_child_of(other)
+        if is_child_of:
+            bit_sim, bit_sim_level = False, None
+            text_sim, levenshtein_sim_level = False, None
+        else:
+            bit_sim, bit_sim_level = is_similar_bitmask(self.bit_mask, other.bit_mask)
+            text_sim, levenshtein_sim_level = self.has_similar_text_to(other)
         sim = bit_sim and text_sim
-        explicit_cherrypick = self.other_is_in_my_cherries(neighbor_commit) or neighbor_commit.other_is_in_my_cherries(self)
-        is_child_of = self.is_child_of(neighbor_commit)
+        explicit_cherrypick = self.other_is_in_my_cherries(other)
 
-        if sim or explicit_cherrypick:
-            neighbor: Neighbor = Neighbor(neighbor=neighbor_commit, sim=sim, bit_sim=bit_sim_level, levenshtein_sim=levenshtein_sim_level,
+        if sim or explicit_cherrypick or (is_child_of and connect_children):
+            neighbor: Neighbor = Neighbor(neighbor=other, sim=sim, bit_sim=bit_sim_level, levenshtein_sim=levenshtein_sim_level,
                                           explicit_cherrypick=explicit_cherrypick, is_child_of=is_child_of)
             self.neighbor_connections.append(neighbor)
 
     def is_child_of(self, other_commit: 'Commit') -> bool:
-        return self.parent_id == other_commit.commit_id
+        return other_commit.commit_id in self.parent_ids
 
     # test if commit message features a "GitOrigin-RevId"
     def has_rev_id(self) -> bool:
@@ -227,7 +237,7 @@ class Commit:
         return flattened_matches
 
     def other_is_in_my_cherries(self, other_commit: 'Commit') -> bool:
-        return other_commit.commit_id in self.explicit_cherries or other_commit.rev_id in self.explicit_cherries
+        return other_commit.commit_id in self.explicit_cherries
 
     # git log provides an ordering of commits, we parse commits in that order
     # was self parsed before other_commit?

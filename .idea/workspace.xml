@@ -4,10 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="added tons of comments">
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="removed some unncessary comments">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/commit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/find_cherries.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_commit.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,7 +43,7 @@
     "Python tests.Python tests for test_commit.Test.test_claims_cherry_pick.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_clean_patch_string.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_count_same_bits.executor": "Run",
-    "Python tests.Python tests for test_commit.Test.test_dummy.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_dummy.executor": "Debug",
     "Python tests.Python tests for test_commit.Test.test_get_bit_mask.executor": "Debug",
     "Python tests.Python tests for test_commit.Test.test_get_claimed_cherries.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_get_explicit_cherrypicks.executor": "Run",
@@ -64,7 +65,7 @@
     "Python tests.Python tests for test_commit.Test.test_setup.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_sim_hash_sum_to_bit_mask.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_sim_hash_weighted.executor": "Run",
-    "Python.find_cherries.executor": "Run",
+    "Python.find_cherries.executor": "Debug",
     "Python.main.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "master",
@@ -133,7 +134,7 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Python tests for test_commit.Test.test_get_bit_mask" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+    <configuration name="Python tests for test_commit.Test.test_dummy" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -144,22 +145,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_commit.Test.test_get_bit_mask&quot;" />
-      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
-      <method v="2" />
-    </configuration>
-    <configuration name="Python tests for test_commit.Test.test_get_hunk_strings" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
-      <module name="diffour" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_commit.Test.test_get_hunk_strings&quot;" />
+      <option name="_new_target" value="&quot;test_commit.Test.test_dummy&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
@@ -178,13 +164,28 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
+    <configuration name="Python tests for test_commit.Test.test_parse_commit_string" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="diffour" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_commit.Test.test_parse_commit_string&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python tests.Python tests for test_commit.Test.test_is_child_of" />
         <item itemvalue="Python tests.Python tests for test_commit.Test" />
         <item itemvalue="Python tests.Python tests for test_commit.Test.test_add_neighbor" />
-        <item itemvalue="Python tests.Python tests for test_commit.Test.test_get_hunk_strings" />
-        <item itemvalue="Python tests.Python tests for test_commit.Test.test_get_bit_mask" />
+        <item itemvalue="Python tests.Python tests for test_commit.Test.test_is_child_of" />
+        <item itemvalue="Python tests.Python tests for test_commit.Test.test_parse_commit_string" />
+        <item itemvalue="Python tests.Python tests for test_commit.Test.test_dummy" />
       </list>
     </recent_temporary>
   </component>
@@ -444,7 +445,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724002005095</updated>
     </task>
-    <option name="localTasksCounter" value="31" />
+    <task id="LOCAL-00031" summary="removed some unncessary comments">
+      <option name="closed" value="true" />
+      <created>1724027493464</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1724027493464</updated>
+    </task>
+    <option name="localTasksCounter" value="32" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -459,7 +468,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="cherry_candidates found, now (identical + close candidates)" />
     <MESSAGE value="sort into cherry pairs and candidate pairs" />
     <MESSAGE value="started adding tests" />
     <MESSAGE value="test_commit done" />
@@ -484,15 +492,21 @@
     <MESSAGE value="caught up the tests" />
     <MESSAGE value="added parent relation (not tested yet)" />
     <MESSAGE value="added tons of comments" />
-    <option name="LAST_COMMIT_MESSAGE" value="added tons of comments" />
+    <MESSAGE value="removed some unncessary comments" />
+    <option name="LAST_COMMIT_MESSAGE" value="removed some unncessary comments" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/find_cherries.py</url>
-          <line>234</line>
-          <option name="timeStamp" value="213" />
+          <line>238</line>
+          <option name="timeStamp" value="227" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/test_commit.py</url>
+          <line>393</line>
+          <option name="timeStamp" value="251" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
