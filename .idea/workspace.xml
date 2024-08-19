@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="code seems bug-free again">
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="before bucketing in buckets">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/commit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/find_cherries.py" afterDir="false" />
@@ -460,7 +460,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724078713157</updated>
     </task>
-    <option name="localTasksCounter" value="33" />
+    <task id="LOCAL-00033" summary="before bucketing in buckets">
+      <option name="closed" value="true" />
+      <created>1724079653910</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1724079653910</updated>
+    </task>
+    <option name="localTasksCounter" value="34" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -475,7 +483,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="started adding tests" />
     <MESSAGE value="test_commit done" />
     <MESSAGE value="added cherry_rea" />
     <MESSAGE value="cherry reaper works" />
@@ -500,14 +507,15 @@
     <MESSAGE value="added tons of comments" />
     <MESSAGE value="removed some unncessary comments" />
     <MESSAGE value="code seems bug-free again" />
-    <option name="LAST_COMMIT_MESSAGE" value="code seems bug-free again" />
+    <MESSAGE value="before bucketing in buckets" />
+    <option name="LAST_COMMIT_MESSAGE" value="before bucketing in buckets" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/find_cherries.py</url>
-          <line>235</line>
+          <line>234</line>
           <option name="timeStamp" value="227" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">

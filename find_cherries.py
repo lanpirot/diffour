@@ -28,7 +28,6 @@ commit_limit: int = 1000  # max number of commits of a repository, we sample
 
 repo_folder: str = "../data/cherry_repos/"
 save_folder: str = "cherry_data/"
-diff_file: str = "diffs_" + str(commit_limit)
 
 commit_marker: str = "====xxx_next_commit_xxx===="
 diff_marker: str = "####xxx_next_diff_xxx####"
@@ -92,14 +91,14 @@ def read_in_commits_from_stdout(process: subprocess.Popen) -> list[commit.Commit
 
 # rotate bits of each bucket, find closely related buckets and unionize them
 # only unionize the original buckets on top, though -- this avoids giant buckets of actually unrelated content
-def get_candidate_groups(commit_diffs: list[commit.Commit]) -> dict[int, set[commit.Commit]]:
-    identical_commit_hashes: dict[int, set[commit.Commit]] = {cd.bit_mask: set() for cd in commit_diffs}
-    for cd in commit_diffs:
-        identical_commit_hashes[cd.bit_mask].add(cd)
+def get_candidate_groups(commits: list[commit.Commit]) -> dict[int, set[commit.Commit]]:
+    identical_commit_bitmasks: dict[int, set[commit.Commit]] = {cd.bit_mask: set() for cd in commits}
+    for cd in commits:
+        identical_commit_bitmasks[cd.bit_mask].add(cd)
 
-    all_groups: dict[int, set[commit.Commit]] = identical_commit_hashes.copy()
+    all_groups: dict[int, set[commit.Commit]] = identical_commit_bitmasks.copy()
 
-    bit_masks_keys: list[int] = list(identical_commit_hashes.keys())
+    bit_masks_keys: list[int] = list(identical_commit_bitmasks.keys())
     # save the original bitmask
     bit_masks: list[tuple[int, int]] = [(bm, bm) for bm in bit_masks_keys]
     for i in range(commit.bit_mask_length):
@@ -110,8 +109,8 @@ def get_candidate_groups(commit_diffs: list[commit.Commit]) -> dict[int, set[com
                 mi, ma = min(bit_masks[j][1], bit_masks[j + 1][1]), max(bit_masks[j][1], bit_masks[j + 1][1])
                 # we found commits with neighboring bitmasks after some rotation, they also have highly similar bitmasks
                 # add the groups of each representative to the other representative's group
-                all_groups[mi] = all_groups[mi].union(identical_commit_hashes[ma])
-                all_groups[ma] = all_groups[ma].union(identical_commit_hashes[mi])
+                all_groups[mi] = all_groups[mi].union(identical_commit_bitmasks[ma])
+                all_groups[ma] = all_groups[ma].union(identical_commit_bitmasks[mi])
 
     # remove commits without partners
     candidate_groups: dict[int, set[commit.Commit]] = {k: all_groups[k] for k in all_groups if len(all_groups[k]) > 1}
@@ -134,8 +133,8 @@ def connect_similar_neighbors(candidate_groups: dict[int, set[commit.Commit]]) -
 
 
 # add a connection to our graph for each picker and its cherries
-def connect_cherry_picks(commit_diffs: list[commit.Commit], c_id_to_c: dict[str, commit.Commit]) -> None:
-    for cd in commit_diffs:
+def connect_cherry_picks(commits: list[commit.Commit], c_id_to_c: dict[str, commit.Commit]) -> None:
+    for cd in commits:
         if cd.has_explicit_cherrypick():
             for cherry_id in cd.explicit_cherries:
                 cherry: commit.Commit
@@ -156,16 +155,16 @@ def connect_parents(commits: list[commit.Commit], c_id_to_c: dict[str, commit.Co
 
 
 # remove all commits without a neighbor. they are a bit boring for our purposes
-def remove_single_commits(commit_diffs: list[commit.Commit]) -> list[commit.Commit]:
-    return [cd for cd in commit_diffs if cd.neighbor_connections]
+def remove_single_commits(commits: list[commit.Commit]) -> list[commit.Commit]:
+    return [cd for cd in commits if cd.neighbor_connections]
 
 
 # give a report about our graph and its edges
-def how_many_connections_are_known(commit_diffs: list[commit.Commit], folder: str) -> None:
+def how_many_connections_are_known(commits: list[commit.Commit], folder: str) -> None:
     picks: int = 0
     children: int = 0
     unknown: int = 0
-    for cd in commit_diffs:
+    for cd in commits:
         picks += sum([1 for n in cd.neighbor_connections if n.explicit_cherrypick])
         children += sum([1 for n in cd.neighbor_connections if n.is_child_of])
         unknown += sum([1 for n in cd.neighbor_connections if not (n.explicit_cherrypick or n.is_child_of)])

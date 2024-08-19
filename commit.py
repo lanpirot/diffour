@@ -162,8 +162,9 @@ class Commit:
                 raise unidiff.UnidiffParseError
             # we compute the bitmask here, so we can forget the whole patch_string right away
             bit_mask = self.get_bit_mask(patch_set, commit_message)
-            hsh = hash(patch_set.__str__())
-            patch_string = self.clean_patch_string(patch_set.__str__())
+            patch_string = patch_set.__str__()
+            hsh = hash(patch_string)
+            patch_string = self.clean_patch_string(patch_string)
             parseable = True
         except unidiff.UnidiffParseError:
             parseable = False
