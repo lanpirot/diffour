@@ -103,14 +103,14 @@ def dummy_cherry_commit(commit_id: str, diff_marker: str) -> 'Commit':
 #         1. to limit memory_impact of giant commits
 #         2. to limit time comparisons of long udiff patches
 class Commit:
-    date_id: int = 2 ** bit_mask_length  # the cherrypicks are sorted by date, we give them an ID by our processing order
+    _date_id: int = 2 ** bit_mask_length  # the cherrypicks are sorted by date, we give them an ID by our processing order
     normal_weight: int = 1
     special_weight: int = 10
     rs: bool = True
 
     def __init__(self, commit_str: str, diff_marker: str) -> None:
-        self.date: int = self.__class__.date_id
-        self.__class__.date_id -= 1
+        self.date: int = self.__class__._date_id
+        self.__class__._date_id -= 1
 
         (parent_ids, commit_id, author, commit_message, patch_string, parseable, bit_mask, hsh) = self.parse_commit_str(commit_str, diff_marker)
 
@@ -120,6 +120,7 @@ class Commit:
         self.commit_id: str = commit_id
         self.is_root: bool = len(self.parent_ids) == 0
         self.rev_id: Optional[str] = self.get_rev_id()
+        self.has_explicit_cherries: bool = self.has_explicit_cherrypick()
         self.explicit_cherries: list = self.get_explicit_cherrypicks()
         self.patch_string: str = patch_string
         self.parseable: bool = parseable
@@ -187,19 +188,18 @@ class Commit:
     def has_similar_text_to(self, neighbor: 'Commit') -> tuple[bool, Optional[float]]:
         if not self.parseable or not neighbor.parseable:
             return False, None
-        if len(self.patch_string) * 2 < len(neighbor.patch_string) or len(self.patch_string) > len(neighbor.patch_string) * 2:
+        l1, l2 = len(self.patch_string), len(neighbor.patch_string)
+        if l1 * 2 < l2 or l1 > l2 * 2:
             return False, 0
-        # TODO: Match first half first, see if high score is achieved, only then match second half
         similarity: float = textdistance.levenshtein.normalized_similarity(self.patch_string, neighbor.patch_string)
         return similarity >= min_levenshtein_similarity, similarity
 
     def already_neighbors(self, other):
-        return other.commit_id in [c.neighbor.commit_id for c in self.neighbor_connections] or self.commit_id in [c.neighbor.commit_id for c in
-                                                                                                                  other.neighbor_connections]
+        return other.commit_id in [c.neighbor.commit_id for c in self.neighbor_connections] or self.commit_id in [c.neighbor.commit_id for c in other.neighbor_connections] or self == other
 
     # add a neighbor edge for our neighbor graph
     # we expect edges of type: strong similarity (bitwise, levenshtein), explicit cherrypick, git-parent-relation
-    def add_neighbor(self, other: 'Commit', connect_children) -> None:
+    def add_neighbor(self, other: 'Commit', text_sim_given: tuple[bool, float] = None, connect_children: bool = False) -> None:
         # we don't need to add a neighbor twice
         if self.already_neighbors(other):
             return
@@ -210,7 +210,10 @@ class Commit:
             text_sim, levenshtein_sim_level = False, None
         else:
             bit_sim, bit_sim_level = is_similar_bitmask(self.bit_mask, other.bit_mask)
-            text_sim, levenshtein_sim_level = self.has_similar_text_to(other)
+            if text_sim_given:
+                text_sim, levenshtein_sim_level = text_sim_given
+            else:
+                text_sim, levenshtein_sim_level = self.has_similar_text_to(other)
         sim = bit_sim and text_sim
         explicit_cherrypick = self.other_is_in_my_cherries(other)
 
@@ -235,7 +238,7 @@ class Commit:
         return re.search(cherry_commit_message_pattern, self.commit_message) is not None
 
     def get_explicit_cherrypicks(self) -> list[str]:
-        if not self.has_explicit_cherrypick():
+        if not self.has_explicit_cherries:
             return []
         matches: list = re.findall(cherry_commit_message_pattern, self.commit_message)
         flattened_matches: list[str] = [value for t in matches for value in t if value]

@@ -24,7 +24,7 @@ from joblib import Parallel, delayed
 
 full_sample: bool = True  # a complete run, or only a test run with a small sample size?
 add_complete_parent_relation: bool = False  # store complete git graph (by parent relation), or only parent-relation for relevant nodes?
-commit_limit: int = 1000  # max number of commits of a repository, we sample
+commit_limit: int = 100000  # max number of commits of a repository, we sample
 
 repo_folder: str = "../data/cherry_repos/"
 save_folder: str = "cherry_data/"
@@ -89,18 +89,62 @@ def read_in_commits_from_stdout(process: subprocess.Popen) -> list[commit.Commit
     return commits
 
 
+def get_any(s: set):
+    return next(iter(s))
+
+
+# Bucket for built-in Hash
+class InnerBuckets:
+    def __init__(self, hsh_to_members: dict[int, set[commit.Commit]] = None):
+        self.hsh_to_members: dict[int, set[commit.Commit]]
+        if hsh_to_members:
+            self.hsh_to_members = hsh_to_members
+        else:
+            self.hsh_to_members = dict()
+
+    def __getitem__(self, index):
+        return self.hsh_to_members[index]
+
+    def __len__(self):
+        return sum([len(v) for v in self.hsh_to_members.values()])
+
+    def __iter__(self):
+        return iter(self.hsh_to_members)
+
+    def values(self):
+        return self.hsh_to_members.values()
+
+    def add(self, other_buckets: 'InnerBuckets'):
+        self.hsh_to_members = {**self.hsh_to_members, **other_buckets.hsh_to_members}
+
+
+def bucketize_buckets(commits: list[commit.Commit]) -> dict[int, InnerBuckets]:
+    bitmask_buckets: dict[int, set[commit.Commit]] = {c.bit_mask: set() for c in commits}
+    for cd in commits:
+        bitmask_buckets[cd.bit_mask].add(cd)
+    buckets: dict[int, InnerBuckets] = dict()
+
+    for bm in bitmask_buckets:
+        bitmask_bucket: set[commit.Commit] = bitmask_buckets[bm]
+        inner_buckets: InnerBuckets = InnerBuckets({c.hsh: set() for c in bitmask_bucket})
+        for c in bitmask_bucket:
+            inner_buckets[c.hsh].add(c)
+        buckets[bm] = inner_buckets
+    return buckets
+
+
+def remove_singles(buckets: dict[int, InnerBuckets]) -> dict[int, InnerBuckets]:
+    return {k: v for k, v in buckets.items() if len(v) > 1}
+
+
 # rotate bits of each bucket, find closely related buckets and unionize them
 # only unionize the original buckets on top, though -- this avoids giant buckets of actually unrelated content
-def get_candidate_groups(commits: list[commit.Commit]) -> dict[int, set[commit.Commit]]:
-    identical_commit_bitmasks: dict[int, set[commit.Commit]] = {cd.bit_mask: set() for cd in commits}
-    for cd in commits:
-        identical_commit_bitmasks[cd.bit_mask].add(cd)
+def get_candidate_groups(commits: list[commit.Commit]) -> dict[int, InnerBuckets]:
+    orig_buckets: dict[int, InnerBuckets] = bucketize_buckets(commits)
+    mutable_buckets: dict[int, InnerBuckets] = bucketize_buckets(commits)
 
-    all_groups: dict[int, set[commit.Commit]] = identical_commit_bitmasks.copy()
-
-    bit_masks_keys: list[int] = list(identical_commit_bitmasks.keys())
-    # save the original bitmask
-    bit_masks: list[tuple[int, int]] = [(bm, bm) for bm in bit_masks_keys]
+    # tuple of rotated and original bitmasks
+    bit_masks: list[tuple[int, int]] = [(bm, bm) for bm in orig_buckets.keys()]
     for i in range(commit.bit_mask_length):
         bit_masks = [(commit.rotate_left(bm[0]), bm[1]) for bm in bit_masks]
         bit_masks = sorted(bit_masks, key=lambda x: x[0])
@@ -109,12 +153,11 @@ def get_candidate_groups(commits: list[commit.Commit]) -> dict[int, set[commit.C
                 mi, ma = min(bit_masks[j][1], bit_masks[j + 1][1]), max(bit_masks[j][1], bit_masks[j + 1][1])
                 # we found commits with neighboring bitmasks after some rotation, they also have highly similar bitmasks
                 # add the groups of each representative to the other representative's group
-                all_groups[mi] = all_groups[mi].union(identical_commit_bitmasks[ma])
-                all_groups[ma] = all_groups[ma].union(identical_commit_bitmasks[mi])
+                mutable_buckets[mi].add(orig_buckets[ma])
+                mutable_buckets[ma].add(orig_buckets[mi])
 
     # remove commits without partners
-    candidate_groups: dict[int, set[commit.Commit]] = {k: all_groups[k] for k in all_groups if len(all_groups[k]) > 1}
-    return candidate_groups
+    return remove_singles(mutable_buckets)
 
 
 # create a lookup table from commit_id to commits
@@ -122,20 +165,33 @@ def create_commit_id_to_commit(commits: list[commit.Commit]) -> dict[str, commit
     return {c.commit_id: c for c in commits}
 
 
+# connect all members of s1 to s2
+def connect_all(s1: set[commit.Commit], s2: set[commit.Commit], text_sim: tuple[bool, float]) -> None:
+    for s in s1:
+        for t in s2:
+            if s == t:
+                continue
+            mi, ma = s.get_ordered_commit_pair(t)
+            ma.add_neighbor(mi, text_sim)
+
+
 # add a connection to our graph for all commits, that we deem highly similar, based on their udiff
-def connect_similar_neighbors(candidate_groups: dict[int, set[commit.Commit]]) -> None:
-    for cg in candidate_groups.values():
-        lcg: list[commit.Commit] = list(cg)
-        for i in range(len(lcg) - 1):
-            for j in range(i + 1, len(lcg)):
-                mi, ma = lcg[i].get_ordered_commit_pair(lcg[j])
-                ma.add_neighbor(mi, False)
+def connect_similar_neighbors(buckets: dict[int, InnerBuckets]) -> None:
+    for ibs in buckets.values():
+        for i in ibs.values():
+            for j in ibs.values():
+                if i == j:
+                    connect_all(i, i, (True, 1.0))
+                else:
+                    text_sim_b, text_sim = get_any(i).has_similar_text_to(get_any(j))
+                    if text_sim_b:
+                        connect_all(i, j, (text_sim_b, text_sim))
 
 
 # add a connection to our graph for each picker and its cherries
 def connect_cherry_picks(commits: list[commit.Commit], c_id_to_c: dict[str, commit.Commit]) -> None:
     for cd in commits:
-        if cd.has_explicit_cherrypick():
+        if cd.has_explicit_cherries:
             for cherry_id in cd.explicit_cherries:
                 cherry: commit.Commit
                 if cherry_id in c_id_to_c:
@@ -143,7 +199,7 @@ def connect_cherry_picks(commits: list[commit.Commit], c_id_to_c: dict[str, comm
                 else:
                     cherry = commit.dummy_cherry_commit(cherry_id, diff_marker)
                     # it would be cleaner to add dummies to the c_id_to_c lookup table
-                cd.add_neighbor(cherry, False)
+                cd.add_neighbor(cherry)
 
 
 # add a connection to our graph for each parent and child, based on git commit ids and their parent-relation
@@ -151,7 +207,7 @@ def connect_parents(commits: list[commit.Commit], c_id_to_c: dict[str, commit.Co
     for c in commits:
         for p in c.parent_ids:
             if p in c_id_to_c:
-                c.add_neighbor(c_id_to_c[p], True)
+                c.add_neighbor(c_id_to_c[p], connect_children=True)
 
 
 # remove all commits without a neighbor. they are a bit boring for our purposes
@@ -202,15 +258,14 @@ def analyze_repo(folder: str) -> None:
     parseable_commits: list[commit.Commit] = [cd for cd in commits if cd.parseable]
     unparseable_commits: list[commit.Commit] = [cd for cd in commits if not cd.parseable]
     print(f"{sh_folder}: #parseable {len(parseable_commits)} of {len(commits)} commits, "
-          f"#explicit pickers: {sum([1 for cd in parseable_commits if cd.has_explicit_cherrypick()])}, "
-          f"#explicit picks: {sum([len(c.get_explicit_cherrypicks()) for c in commits if c.has_explicit_cherrypick()])}")
+          f"#explicit pickers: {sum([1 for cd in parseable_commits if cd.has_explicit_cherries])}, "
+          f"#explicit picks: {sum([len(c.explicit_cherries) for c in commits if c.has_explicit_cherries])}")
 
-    candidate_groups: dict[int, set[commit.Commit]] = get_candidate_groups(parseable_commits)
-    non_parseable_groups: dict[int, set[commit.Commit]] = {2 ** commit.bit_mask_length + i: {unparseable_commits[i]} for i in
-                                                           range(len(unparseable_commits))}
-    candidate_groups = {**candidate_groups, **non_parseable_groups}
+    buckets: dict[int, InnerBuckets] = get_candidate_groups(parseable_commits)
+    non_parseable_buckets: dict[int, InnerBuckets] = {(2 ** commit.bit_mask_length + i): InnerBuckets({0: {unparseable_commits[i]}}) for i in range(len(unparseable_commits))}
+    buckets = {**buckets, **non_parseable_buckets}
 
-    connect_similar_neighbors(candidate_groups)
+    connect_similar_neighbors(buckets)
     connect_cherry_picks(commits, commit_id_to_commit)
     if add_complete_parent_relation:
         connect_parents(commits, commit_id_to_commit)
