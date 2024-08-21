@@ -165,7 +165,7 @@ class Commit:
             self.commit_fine_signature: int = sign_commit_fine(patch_set.__str__())
         else:
             self.patch_set, self.commit_lsh_signature, self.commit_fine_signature = None, None, None
-        self.neighbor_connections: list = []
+        self.neighbor_connections: set[Neighbor] = set()
 
     # we use Jaccard-Similarity of Hunks of a Diff
     def is_similar_patch_to(self, neighbor: 'Commit') -> tuple[bool, Optional[float]]:
@@ -176,33 +176,34 @@ class Commit:
         return similarity >= min_patch_similarity, similarity
 
     def already_neighbors(self, other):
-        return other.commit_id in [c.neighbor.commit_id for c in self.neighbor_connections] or self.commit_id in [c.neighbor.commit_id for c in
-                                                                                                                  other.neighbor_connections] or self == other
+        return other in self.neighbor_connections or self in other.neighbor_connections or self == other
 
     # add a neighbor edge for our neighbor graph
     # we expect edges of type: strong similarity (bitwise, patch_sim), explicit cherrypick, git-parent-relation
-    def add_neighbor(self, other: 'Commit', patch_sim_given: tuple[bool, float] = None, connect_children: bool = False) -> None:
+    def add_neighbor(self, other: 'Commit', patch_sim_given: tuple[bool, float] = None) -> None:
         # we don't need to add a neighbor twice
         if self.already_neighbors(other):
             return
+        neighbor: Neighbor
 
-        is_child_of = self.is_child_of(other)
-        if is_child_of:
-            bit_sim, bit_sim_level = False, None
-            patch_sim, patch_sim_level = False, None
+        if self.is_child_of(other):
+            neighbor = Neighbor(neighbor=other, sim=False, bit_sim=0, patch_sim=0, explicit_cherrypick=False, is_child_of=True)
         else:
-            bit_sim, bit_sim_level = is_similar_signature(self.commit_lsh_signature, other.commit_lsh_signature)
             if patch_sim_given:
                 patch_sim, patch_sim_level = patch_sim_given
             else:
                 patch_sim, patch_sim_level = self.is_similar_patch_to(other)
-        sim = bit_sim and patch_sim
-        explicit_cherrypick = self.other_is_in_my_cherries(other)
+            bit_sim, bit_sim_level = is_similar_signature(self.commit_lsh_signature, other.commit_lsh_signature)
+            is_similar = bit_sim and patch_sim
 
-        if sim or explicit_cherrypick or (is_child_of and connect_children):
-            neighbor: Neighbor = Neighbor(neighbor=other, sim=sim, bit_sim=bit_sim_level, patch_sim=patch_sim_level,
-                                          explicit_cherrypick=explicit_cherrypick, is_child_of=is_child_of)
-            self.neighbor_connections.append(neighbor)
+            if other.other_is_in_my_cherries(self):
+                neighbor = Neighbor(neighbor=self, sim=is_similar, bit_sim=bit_sim_level, patch_sim=patch_sim_level, explicit_cherrypick=True, is_child_of=False)
+                other.neighbor_connections.add(neighbor)
+                return
+            else:
+                neighbor = Neighbor(neighbor=other, sim=is_similar, bit_sim=bit_sim_level, patch_sim=patch_sim_level, explicit_cherrypick=self.other_is_in_my_cherries(other), is_child_of=False)
+
+        self.neighbor_connections.add(neighbor)
 
     def is_child_of(self, other_commit: 'Commit') -> bool:
         return other_commit.commit_id in self.parent_ids
@@ -250,7 +251,6 @@ class Commit:
                 ret.add(sign_hunk(file_name + "\n" + next((line for line in patched_file.patch_info if line.startswith("index ")), self.commit_message)))
             else:
                 ret.union({sign_hunk(file_name + "\n" + get_hunk_string(hunk)) for hunk in patched_file})
-            pass
         return ret
 
 
@@ -264,3 +264,9 @@ class Neighbor:
     patch_sim: float
     explicit_cherrypick: bool
     is_child_of: bool
+
+    def __hash__(self) -> int:
+        return hash(self.neighbor.commit_id)
+
+    def __eq__(self, item) -> bool:
+        return item == self.neighbor

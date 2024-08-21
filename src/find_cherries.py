@@ -24,7 +24,7 @@ from joblib import Parallel, delayed
 
 full_sample: bool = True  # a complete run, or only a test run with a small sample size?
 add_complete_parent_relation: bool = False  # store complete git graph (by parent relation), or only parent-relation for relevant nodes?
-commit_limit: int = 10**4  # max number of commits of a repository, we sample
+commit_limit: int = 10**7  # max number of commits of a repository, we sample
 max_bucket_overspill = 1
 
 repo_folder: str = "../data/cherry_repos/"
@@ -208,7 +208,7 @@ def connect_parents(commits: list[commit.Commit], c_id_to_c: dict[str, commit.Co
     for c in commits:
         for p in c.parent_ids:
             if p in c_id_to_c:
-                c.add_neighbor(c_id_to_c[p], connect_children=True)
+                c.add_neighbor(c_id_to_c[p])
 
 
 # remove all commits without a neighbor. they are a bit boring for our purposes
@@ -266,8 +266,8 @@ def analyze_repo(folder: str) -> None:
     non_parseable_buckets: dict[int, InnerBuckets] = {(2 ** commit.bit_mask_length + i): InnerBuckets({0: {unparseable_commits[i]}}) for i in range(len(unparseable_commits))}
     buckets = {**buckets, **non_parseable_buckets}
 
-    connect_cherry_picks(commits, commit_id_to_commit)
     connect_similar_neighbors(buckets)
+    connect_cherry_picks(commits, commit_id_to_commit)
     if add_complete_parent_relation:
         connect_parents(commits, commit_id_to_commit)
     else:
