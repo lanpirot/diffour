@@ -85,7 +85,8 @@ def dummy_cherry_commit(commit_id: str, diff_marker: str) -> 'Commit':
 
 
 def get_hunk_string(hunk: unidiff.patch) -> str:
-    ret = ",".join([str(i) for i in [hunk.source_start, hunk.source_length, hunk.target_start, hunk.target_length]]) + "\n"
+    # ret = ",".join([str(i) for i in [hunk.source_start, hunk.source_length, hunk.target_start, hunk.target_length]]) + "\n"
+    ret = ""
     for hunk_line in hunk:
         if hunk_line.is_context:
             ret += hunk_line.value
@@ -181,12 +182,15 @@ class Commit:
     # add a neighbor edge for our neighbor graph
     # we expect edges of type: strong similarity (bitwise, patch_sim), explicit cherrypick, git-parent-relation
     def add_neighbor(self, other: 'Commit', patch_sim_given: tuple[bool, float] = None, connect_children: bool = False) -> None:
+        if self.commit_id == "6dd4ffbbad5722450ed772c274388a8bf0b85a9e":
+            pass
         # we don't need to add a neighbor twice
         if self.already_neighbors(other):
             return
 
         is_child_of = self.is_child_of(other)
         if is_child_of:
+            # TODO: doe the missing cherries come from here?
             bit_sim, bit_sim_level = False, None
             patch_sim, patch_sim_level = False, None
         else:
@@ -245,11 +249,10 @@ class Commit:
         for patched_file in patch_set:
             file_name: str = patched_file.source_file + patched_file.target_file
             if patched_file.is_binary_file:
-                ret.add(sign_hunk(file_name + "\n" + patched_file.patch_info[1]))
-                print(patched_file.patch_info[1])
+                # use the binary file hash for its own signature else fallback to commit.message
+                ret.add(sign_hunk(file_name + "\n" + next((line for line in patched_file.patch_info if line.startswith("index ")), self.commit_message)))
             else:
-                for hunk in patched_file:
-                    ret.add(sign_hunk(file_name + "\n" + get_hunk_string(hunk)))
+                ret.union({sign_hunk(file_name + "\n" + get_hunk_string(hunk)) for hunk in patched_file})
             pass
         return ret
 

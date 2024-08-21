@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="shingles are whole hunks now">
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="better binary file signature">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/commit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/find_cherries.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_commit.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,7 +49,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Python tests.Python tests for test_commit.Test.executor": "Debug",
+    "Python tests.Python tests for test_commit.Test.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_add_neighbor.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_claims_cherry_pick.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_clean_patch_string.executor": "Run",
@@ -77,7 +76,7 @@
     "Python tests.Python tests for test_commit.Test.test_setup.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_sim_hash_sum_to_bit_mask.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_sim_hash_weighted.executor": "Run",
-    "Python.find_cherries.executor": "Run",
+    "Python.find_cherries.executor": "Debug",
     "Python.main.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "main",
@@ -93,7 +92,7 @@
       </set>
     </option>
   </component>
-  <component name="RunManager" selected="Python tests.Python tests for test_commit.Test.test_is_similar_bitmask">
+  <component name="RunManager" selected="Python.find_cherries">
     <configuration name="find_cherries" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
@@ -193,8 +192,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python tests.Python tests for test_commit.Test.test_is_similar_bitmask" />
         <item itemvalue="Python tests.Python tests for test_commit.Test" />
+        <item itemvalue="Python tests.Python tests for test_commit.Test.test_is_similar_bitmask" />
         <item itemvalue="Python tests.Python tests for test_commit.Test.test_add_neighbor" />
         <item itemvalue="Python tests.Python tests for test_commit.Test.test_is_child_of" />
         <item itemvalue="Python tests.Python tests for test_commit.Test.test_parse_commit_string" />
@@ -497,7 +496,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724221145456</updated>
     </task>
-    <option name="localTasksCounter" value="36" />
+    <task id="LOCAL-00036" summary="better binary file signature">
+      <option name="closed" value="true" />
+      <created>1724227537894</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1724227537894</updated>
+    </task>
+    <option name="localTasksCounter" value="37" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -512,7 +519,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="cherry reaper works" />
     <MESSAGE value="before filtering step" />
     <MESSAGE value="added graph of neighboring connections" />
     <MESSAGE value="saving graph, added X-provenance" />
@@ -537,14 +543,15 @@
     <MESSAGE value="before bucketing in buckets" />
     <MESSAGE value="still before bucketing in buckets" />
     <MESSAGE value="shingles are whole hunks now" />
-    <option name="LAST_COMMIT_MESSAGE" value="shingles are whole hunks now" />
+    <MESSAGE value="better binary file signature" />
+    <option name="LAST_COMMIT_MESSAGE" value="better binary file signature" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/find_cherries.py</url>
-          <line>290</line>
+          <line>293</line>
           <option name="timeStamp" value="227" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -556,6 +563,11 @@
           <url>file://$PROJECT_DIR$/test_commit.py</url>
           <line>30</line>
           <option name="timeStamp" value="264" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/commit.py</url>
+          <line>185</line>
+          <option name="timeStamp" value="269" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

@@ -22,9 +22,9 @@ from joblib import Parallel, delayed
 #           - git_child_and_parent (directed)
 #           - highly_similar_commits (directed, weight1: bit_similarity, weight2: Levenshtein_similarity)
 
-full_sample: bool = True  # a complete run, or only a test run with a small sample size?
+full_sample: bool = False  # a complete run, or only a test run with a small sample size?
 add_complete_parent_relation: bool = False  # store complete git graph (by parent relation), or only parent-relation for relevant nodes?
-commit_limit: int = 10**7  # max number of commits of a repository, we sample
+commit_limit: int = 10**4  # max number of commits of a repository, we sample
 max_bucket_overspill = 1
 
 repo_folder: str = "../data/cherry_repos/"
@@ -35,7 +35,7 @@ diff_marker: str = "####xxx_next_diff_xxx####"
 pretty_format: str = commit_marker + "%n%P%n%H%n%an%n%s%b%n" + diff_marker
 
 no_merges: str = "" if add_complete_parent_relation else " --no-merges"
-git_command: str = f"git log --all{no_merges} --date-order --pretty=format:\"{pretty_format}\" -p -U0 -n {commit_limit}"
+git_command: str = f"git log --all{no_merges} --date-order --pretty=format:\"{pretty_format}\" -p -U3 -n {commit_limit}"
 
 
 # prepare each git repo, and .gitattributes file
@@ -121,8 +121,8 @@ class InnerBuckets:
 
 def bucketize_buckets(commits: list[commit.Commit]) -> dict[int, InnerBuckets]:
     signa_buckets: dict[int, set[commit.Commit]] = {c.commit_lsh_signature: set() for c in commits}
-    for cd in commits:
-        signa_buckets[cd.commit_lsh_signature].add(cd)
+    for c in commits:
+        signa_buckets[c.commit_lsh_signature].add(c)
     buckets: dict[int, InnerBuckets] = dict()
 
     for bm in signa_buckets:
@@ -191,16 +191,16 @@ def connect_similar_neighbors(buckets: dict[int, InnerBuckets]) -> None:
 
 # add a connection to our graph for each picker and its cherries
 def connect_cherry_picks(commits: list[commit.Commit], c_id_to_c: dict[str, commit.Commit]) -> None:
-    for cd in commits:
-        if cd.has_explicit_cherries:
-            for cherry_id in cd.explicit_cherries:
+    for c in commits:
+        if c.has_explicit_cherries:
+            for cherry_id in c.explicit_cherries:
                 cherry: commit.Commit
                 if cherry_id in c_id_to_c:
                     cherry = c_id_to_c[cherry_id]
                 else:
                     cherry = commit.dummy_cherry_commit(cherry_id, diff_marker)
                     # it would be cleaner to add dummies to the c_id_to_c lookup table
-                cd.add_neighbor(cherry)
+                c.add_neighbor(cherry)
 
 
 # add a connection to our graph for each parent and child, based on git commit ids and their parent-relation
@@ -213,7 +213,7 @@ def connect_parents(commits: list[commit.Commit], c_id_to_c: dict[str, commit.Co
 
 # remove all commits without a neighbor. they are a bit boring for our purposes
 def remove_single_commits(commits: list[commit.Commit]) -> list[commit.Commit]:
-    return [cd for cd in commits if cd.neighbor_connections]
+    return [c for c in commits if c.neighbor_connections]
 
 
 # give a report about our graph and its edges
@@ -221,10 +221,10 @@ def how_many_connections_are_known(commits: list[commit.Commit], folder: str) ->
     picks: int = 0
     children: int = 0
     unknown: int = 0
-    for cd in commits:
-        picks += sum([1 for n in cd.neighbor_connections if n.explicit_cherrypick])
-        children += sum([1 for n in cd.neighbor_connections if n.is_child_of])
-        unknown += sum([1 for n in cd.neighbor_connections if not (n.explicit_cherrypick or n.is_child_of)])
+    for c in commits:
+        picks += sum([1 for n in c.neighbor_connections if n.explicit_cherrypick])
+        children += sum([1 for n in c.neighbor_connections if n.is_child_of])
+        unknown += sum([1 for n in c.neighbor_connections if not (n.explicit_cherrypick or n.is_child_of)])
     print(f"{folder}: Known connections: picker->cherry {picks}, child->parent {children};  unknown: {unknown}")
 
 
@@ -256,18 +256,18 @@ def analyze_repo(folder: str) -> None:
     commit_id_to_commit: dict[str, commit.Commit] = create_commit_id_to_commit(commits)
 
     # remove non-parseable commits
-    parseable_commits: list[commit.Commit] = [cd for cd in commits if cd.parseable]
-    unparseable_commits: list[commit.Commit] = [cd for cd in commits if not cd.parseable]
+    parseable_commits: list[commit.Commit] = [c for c in commits if c.parseable]
+    unparseable_commits: list[commit.Commit] = [c for c in commits if not c.parseable]
     print(f"{sh_folder}: #parseable {len(parseable_commits)} of {len(commits)} commits, "
-          f"#explicit pickers: {sum([1 for cd in parseable_commits if cd.has_explicit_cherries])}, "
+          f"#explicit pickers: {sum([1 for c in commits if c.has_explicit_cherries])}, "
           f"#explicit picks: {sum([len(c.explicit_cherries) for c in commits if c.has_explicit_cherries])}")
 
     buckets: dict[int, InnerBuckets] = get_candidate_groups(parseable_commits)
     non_parseable_buckets: dict[int, InnerBuckets] = {(2 ** commit.bit_mask_length + i): InnerBuckets({0: {unparseable_commits[i]}}) for i in range(len(unparseable_commits))}
     buckets = {**buckets, **non_parseable_buckets}
 
-    connect_similar_neighbors(buckets)
     connect_cherry_picks(commits, commit_id_to_commit)
+    connect_similar_neighbors(buckets)
     if add_complete_parent_relation:
         connect_parents(commits, commit_id_to_commit)
     else:
@@ -275,6 +275,8 @@ def analyze_repo(folder: str) -> None:
         f_commit_id_to_commit: dict[str, commit.Commit] = create_commit_id_to_commit(final_commits)
         connect_parents(final_commits, f_commit_id_to_commit)
 
+    # TODO: prune tree: weakest outgoing (non-explicit) edges
+    # TODO: prune tree: remove transitive edges pointing to same sink
     how_many_connections_are_known(commits, sh_folder)
     # TODO: for those without known connection: look within commit messages for words of length 40 (see git hash), print those out
     # goal: find all other reference systems, people use
@@ -304,5 +306,5 @@ if __name__ == '__main__':
         end_time: float = time.time()
         print(f"Execution time: {end_time - start_time:.1f} seconds")
     else:
-        subfolder: str = repo_folder + "pydriller"
+        subfolder: str = repo_folder + "ceph"
         analyze_repo(subfolder)
