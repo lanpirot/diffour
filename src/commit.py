@@ -250,7 +250,7 @@ class Commit:
                 # use the binary file hash for its own signature else fallback to commit.message
                 ret.add(sign_hunk(file_name + "\n" + next((line for line in patched_file.patch_info if line.startswith("index ")), self.commit_message)))
             else:
-                ret.union({sign_hunk(file_name + "\n" + get_hunk_string(hunk)) for hunk in patched_file})
+                ret = ret.union({sign_hunk(file_name + "\n" + get_hunk_string(hunk)) for hunk in patched_file})
         return ret
 
 

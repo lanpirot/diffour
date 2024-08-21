@@ -24,7 +24,7 @@ from joblib import Parallel, delayed
 
 full_sample: bool = True  # a complete run, or only a test run with a small sample size?
 add_complete_parent_relation: bool = False  # store complete git graph (by parent relation), or only parent-relation for relevant nodes?
-commit_limit: int = 10**7  # max number of commits of a repository, we sample
+commit_limit: int = 10**3  # max number of commits of a repository, we sample
 max_bucket_overspill = 1
 
 repo_folder: str = "../data/cherry_repos/"
@@ -306,5 +306,5 @@ if __name__ == '__main__':
         end_time: float = time.time()
         print(f"Execution time: {end_time - start_time:.1f} seconds")
     else:
-        subfolder: str = repo_folder + "ceph"
+        subfolder: str = repo_folder + "FFmpeg"
         analyze_repo(subfolder)
