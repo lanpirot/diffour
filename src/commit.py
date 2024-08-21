@@ -182,15 +182,12 @@ class Commit:
     # add a neighbor edge for our neighbor graph
     # we expect edges of type: strong similarity (bitwise, patch_sim), explicit cherrypick, git-parent-relation
     def add_neighbor(self, other: 'Commit', patch_sim_given: tuple[bool, float] = None, connect_children: bool = False) -> None:
-        if self.commit_id == "6dd4ffbbad5722450ed772c274388a8bf0b85a9e":
-            pass
         # we don't need to add a neighbor twice
         if self.already_neighbors(other):
             return
 
         is_child_of = self.is_child_of(other)
         if is_child_of:
-            # TODO: doe the missing cherries come from here?
             bit_sim, bit_sim_level = False, None
             patch_sim, patch_sim_level = False, None
         else:

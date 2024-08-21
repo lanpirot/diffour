@@ -22,7 +22,7 @@ from joblib import Parallel, delayed
 #           - git_child_and_parent (directed)
 #           - highly_similar_commits (directed, weight1: bit_similarity, weight2: Levenshtein_similarity)
 
-full_sample: bool = False  # a complete run, or only a test run with a small sample size?
+full_sample: bool = True  # a complete run, or only a test run with a small sample size?
 add_complete_parent_relation: bool = False  # store complete git graph (by parent relation), or only parent-relation for relevant nodes?
 commit_limit: int = 10**4  # max number of commits of a repository, we sample
 max_bucket_overspill = 1
@@ -151,8 +151,8 @@ def get_candidate_groups(commits: list[commit.Commit]) -> dict[int, InnerBuckets
         signatures = sorted(signatures, key=lambda x: x[0])
         for j in range(len(signatures)):
             bucket_offset = 1
-            while commit.is_similar_signature(signatures[j][0], signatures[(j + bucket_offset) % len(signatures)][0])[0] and bucket_offset < max_bucket_overspill + 1:
-                mi, ma = min(signatures[j][1], signatures[j + 1][1]), max(signatures[j][1], signatures[j + 1][1])
+            while bucket_offset < max_bucket_overspill + 1 and commit.is_similar_signature(signatures[j][0], signatures[(j + bucket_offset) % len(signatures)][0])[0]:
+                mi, ma = min(signatures[j][1], signatures[(j + bucket_offset) % len(signatures)][1]), max(signatures[j][1], signatures[(j + bucket_offset) % len(signatures)][1])
                 # a neighboring bucket has commits with a highly similar signature, let the buckets overspill:
                 mutable_buckets[mi].add(orig_buckets[ma])
                 bucket_offset += 1

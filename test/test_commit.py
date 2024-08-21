@@ -3,7 +3,7 @@ from unittest import TestCase
 import numpy as np
 import unidiff
 
-import commit
+from src import commit
 from collections import namedtuple
 import random
 
