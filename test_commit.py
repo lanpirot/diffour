@@ -352,7 +352,7 @@ class Test(TestCase):
         dummy.patch_string = self.dummy_diff
         self.assertEqual([], dummy.neighbor_connections)
         dummy.add_neighbor(dummy, False)
-        neighbors = [commit.Neighbor(neighbor=dummy, sim=True, bit_sim=1.0, levenshtein_sim=1.0, explicit_cherrypick=False, is_child_of=False)]
+        neighbors = [commit.Neighbor(neighbor=dummy, sim=True, bit_sim=1.0, patch_sim=1.0, explicit_cherrypick=False, is_child_of=False)]
         self.assertEqual(neighbors, dummy.neighbor_connections)
         dummy.add_neighbor(dummy, False)
         self.assertEqual(neighbors, dummy.neighbor_connections)
@@ -362,7 +362,7 @@ class Test(TestCase):
         neighbor.commit_lsh_signature = 3
         neighbor.patch_string = self.dummy_diff
         dummy.add_neighbor(neighbor, False)
-        neighbors += [commit.Neighbor(neighbor=neighbor, sim=True, bit_sim=63 / 64, levenshtein_sim=1.0, explicit_cherrypick=False, is_child_of=False)]
+        neighbors += [commit.Neighbor(neighbor=neighbor, sim=True, bit_sim=63 / 64, patch_sim=1.0, explicit_cherrypick=False, is_child_of=False)]
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
         # add same neighbor: nothing should change
@@ -375,13 +375,13 @@ class Test(TestCase):
         other_neighbor.commit_id = "other_neighbor"
         dummy.explicit_cherries = [other_neighbor.commit_id]
         dummy.add_neighbor(other_neighbor, False)
-        neighbors += [commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=None, levenshtein_sim=None, explicit_cherrypick=True, is_child_of=False)]
+        neighbors += [commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=None, patch_sim=None, explicit_cherrypick=True, is_child_of=False)]
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
         other_neighbor = commit.dummy_cherry_commit("last neighbor", "marker")
         dummy.explicit_cherries = [other_neighbor.commit_id]
         dummy.add_neighbor(other_neighbor, False)
-        neighbors += [commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=None, levenshtein_sim=None, explicit_cherrypick=True, is_child_of=False)]
+        neighbors += [commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=None, patch_sim=None, explicit_cherrypick=True, is_child_of=False)]
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
     def test_is_child_of(self):

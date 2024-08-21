@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="still before bucketing in buckets">
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="shingles are whole hunks now">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/commit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/find_cherries.py" afterDir="false" />
@@ -68,7 +68,7 @@
     "Python tests.Python tests for test_commit.Test.test_has_similar_text_to.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_init.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_is_child_of.executor": "Run",
-    "Python tests.Python tests for test_commit.Test.test_is_similar_bitmask.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_is_similar_bitmask.executor": "Debug",
     "Python tests.Python tests for test_commit.Test.test_mingle_shingles.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_other_is_in_my_cherries.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_other_is_my_cherry.executor": "Run",
@@ -93,7 +93,7 @@
       </set>
     </option>
   </component>
-  <component name="RunManager" selected="Python.find_cherries">
+  <component name="RunManager" selected="Python tests.Python tests for test_commit.Test.test_is_similar_bitmask">
     <configuration name="find_cherries" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
@@ -146,21 +146,6 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Python tests for test_commit.Test.test_dummy" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
-      <module name="diffour" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_commit.Test.test_dummy&quot;" />
-      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
-      <method v="2" />
-    </configuration>
     <configuration name="Python tests for test_commit.Test.test_is_child_of" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
@@ -173,6 +158,21 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
       <option name="_new_target" value="&quot;test_commit.Test.test_is_child_of&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Python tests for test_commit.Test.test_is_similar_bitmask" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="diffour" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_commit.Test.test_is_similar_bitmask&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
@@ -193,11 +193,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python tests.Python tests for test_commit.Test.test_is_similar_bitmask" />
         <item itemvalue="Python tests.Python tests for test_commit.Test" />
         <item itemvalue="Python tests.Python tests for test_commit.Test.test_add_neighbor" />
         <item itemvalue="Python tests.Python tests for test_commit.Test.test_is_child_of" />
         <item itemvalue="Python tests.Python tests for test_commit.Test.test_parse_commit_string" />
-        <item itemvalue="Python tests.Python tests for test_commit.Test.test_dummy" />
       </list>
     </recent_temporary>
   </component>
@@ -489,7 +489,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724080119240</updated>
     </task>
-    <option name="localTasksCounter" value="35" />
+    <task id="LOCAL-00035" summary="shingles are whole hunks now">
+      <option name="closed" value="true" />
+      <created>1724221145456</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1724221145456</updated>
+    </task>
+    <option name="localTasksCounter" value="36" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -504,7 +512,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="added cherry_rea" />
     <MESSAGE value="cherry reaper works" />
     <MESSAGE value="before filtering step" />
     <MESSAGE value="added graph of neighboring connections" />
@@ -529,7 +536,8 @@
     <MESSAGE value="code seems bug-free again" />
     <MESSAGE value="before bucketing in buckets" />
     <MESSAGE value="still before bucketing in buckets" />
-    <option name="LAST_COMMIT_MESSAGE" value="still before bucketing in buckets" />
+    <MESSAGE value="shingles are whole hunks now" />
+    <option name="LAST_COMMIT_MESSAGE" value="shingles are whole hunks now" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -543,6 +551,11 @@
           <url>file://$PROJECT_DIR$/test_commit.py</url>
           <line>393</line>
           <option name="timeStamp" value="251" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/test_commit.py</url>
+          <line>30</line>
+          <option name="timeStamp" value="264" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

@@ -127,9 +127,9 @@ def parse_commit_str(commit_str: str, diff_marker: str):
     parseable: bool
     try:
         patch_set: unidiff.PatchSet = unidiff.PatchSet(commit_diff)
+        parseable = True
         if len(patch_set) == 0:
             raise unidiff.UnidiffParseError
-        parseable = True
     except unidiff.UnidiffParseError:
         parseable = False
         patch_set = None
@@ -137,10 +137,8 @@ def parse_commit_str(commit_str: str, diff_marker: str):
 
 
 # Commit: a class to store all information of a commit, we can gather from the git log parsing
-#         we also compute a signature of its udiff (and commit message for binary files) for SimHash
-#         we only store parts of long udiff patches, see max_levenshtein_string_length,
-#         1. to limit memory_impact of giant commits
-#         2. to limit time comparisons of long udiff patches
+#         we also compute a rough, but locality sensitive signature of its udiff (and commit message for binary files) for SimHash
+#         and a fine hash of the whole diff
 class Commit:
     _date_id: int = 2 ** bit_mask_length  # the cherrypicks are sorted by date, we give them an ID by our processing order
 
@@ -181,7 +179,7 @@ class Commit:
                                                                                                                   other.neighbor_connections] or self == other
 
     # add a neighbor edge for our neighbor graph
-    # we expect edges of type: strong similarity (bitwise, levenshtein), explicit cherrypick, git-parent-relation
+    # we expect edges of type: strong similarity (bitwise, patch_sim), explicit cherrypick, git-parent-relation
     def add_neighbor(self, other: 'Commit', patch_sim_given: tuple[bool, float] = None, connect_children: bool = False) -> None:
         # we don't need to add a neighbor twice
         if self.already_neighbors(other):
@@ -201,7 +199,7 @@ class Commit:
         explicit_cherrypick = self.other_is_in_my_cherries(other)
 
         if sim or explicit_cherrypick or (is_child_of and connect_children):
-            neighbor: Neighbor = Neighbor(neighbor=other, sim=sim, bit_sim=bit_sim_level, levenshtein_sim=patch_sim_level,
+            neighbor: Neighbor = Neighbor(neighbor=other, sim=sim, bit_sim=bit_sim_level, patch_sim=patch_sim_level,
                                           explicit_cherrypick=explicit_cherrypick, is_child_of=is_child_of)
             self.neighbor_connections.append(neighbor)
 
@@ -247,7 +245,8 @@ class Commit:
         for patched_file in patch_set:
             file_name: str = patched_file.source_file + patched_file.target_file
             if patched_file.is_binary_file:
-                ret.add(sign_hunk(file_name + "\n" + self.commit_message))
+                ret.add(sign_hunk(file_name + "\n" + patched_file.patch_info[1]))
+                print(patched_file.patch_info[1])
             else:
                 for hunk in patched_file:
                     ret.add(sign_hunk(file_name + "\n" + get_hunk_string(hunk)))
@@ -262,6 +261,6 @@ class Neighbor:
     neighbor: Commit
     sim: bool
     bit_sim: float
-    levenshtein_sim: float
+    patch_sim: float
     explicit_cherrypick: bool
     is_child_of: bool

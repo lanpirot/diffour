@@ -25,6 +25,7 @@ from joblib import Parallel, delayed
 full_sample: bool = True  # a complete run, or only a test run with a small sample size?
 add_complete_parent_relation: bool = False  # store complete git graph (by parent relation), or only parent-relation for relevant nodes?
 commit_limit: int = 10**7  # max number of commits of a repository, we sample
+max_bucket_overspill = 1
 
 repo_folder: str = "../data/cherry_repos/"
 save_folder: str = "cherry_data/"
@@ -150,10 +151,9 @@ def get_candidate_groups(commits: list[commit.Commit]) -> dict[int, InnerBuckets
         signatures = sorted(signatures, key=lambda x: x[0])
         for j in range(len(signatures)):
             bucket_offset = 1
-            while commit.is_similar_signature(signatures[j][0], signatures[(j + bucket_offset) % len(signatures)][0])[0] and bucket_offset < 2:
+            while commit.is_similar_signature(signatures[j][0], signatures[(j + bucket_offset) % len(signatures)][0])[0] and bucket_offset < max_bucket_overspill + 1:
                 mi, ma = min(signatures[j][1], signatures[j + 1][1]), max(signatures[j][1], signatures[j + 1][1])
-                # we found commits with neighboring signatures after some rotation, they also have highly similar signatures
-                # add the groups of each representative to the other representative's group
+                # a neighboring bucket has commits with a highly similar signature, let the buckets overspill:
                 mutable_buckets[mi].add(orig_buckets[ma])
                 bucket_offset += 1
 
@@ -234,7 +234,7 @@ def commits_to_csv(commits: list[commit.Commit]) -> str:
     for c in commits:
         for cn in c.neighbor_connections:
             if c.is_younger_than(cn.neighbor):
-                csv += f"{c.commit_id},{cn.neighbor.commit_id},{cn.sim},{cn.bit_sim},{cn.levenshtein_sim},{cn.explicit_cherrypick},{np.nan},{cn.is_child_of}\n"
+                csv += f"{c.commit_id},{cn.neighbor.commit_id},{cn.sim},{cn.bit_sim},{cn.patch_sim},{cn.explicit_cherrypick},{np.nan},{cn.is_child_of}\n"
     return csv
 
 
@@ -242,7 +242,7 @@ def save_graph(commits: list[commit.Commit], project_name: str) -> None:
     os.makedirs(save_folder, exist_ok=True)
     with open(save_folder + project_name + "_" + str(commit_limit) + ".csv", 'w') as file:
         file.write(
-            "tail(picker;child),head(cherry;parent),similar,bit_similarity,levenshtein_similarity,picks_explicitly,patch_similarity,is_child_of\n")
+            "tail(picker;child),head(cherry;parent),similar,bit_similarity,patch_similarity,picks_explicitly,is_child_of\n")
         file.write(commits_to_csv(commits))
 
 
