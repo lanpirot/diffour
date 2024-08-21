@@ -1,0 +1,549 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="still before bucketing in buckets">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/commit.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/find_cherries.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="2kc4oAhpgE1JRcFNg81B0jUM4ZX" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python tests.Python tests for test_commit.Test.executor": "Debug",
+    "Python tests.Python tests for test_commit.Test.test_add_neighbor.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_claims_cherry_pick.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_clean_patch_string.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_count_same_bits.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_dummy.executor": "Debug",
+    "Python tests.Python tests for test_commit.Test.test_get_bit_mask.executor": "Debug",
+    "Python tests.Python tests for test_commit.Test.test_get_claimed_cherries.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_get_explicit_cherrypicks.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_get_hunk_strings.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_get_ordered_commit_pair.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_get_rev_id.executor": "Debug",
+    "Python tests.Python tests for test_commit.Test.test_get_weighted_diff.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_has_explicit_cherrypick.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_has_rev_id.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_has_similar_text_to.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_init.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_is_child_of.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_is_similar_bitmask.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_mingle_shingles.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_other_is_in_my_cherries.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_other_is_my_cherry.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_parse_commit_string.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_rotate_left.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_setup.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_sim_hash_sum_to_bit_mask.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_sim_hash_weighted.executor": "Run",
+    "Python.find_cherries.executor": "Run",
+    "Python.main.executor": "Debug",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
+    "ignore.virus.scanning.warn.message": "true",
+    "settings.editor.selected.configurable": "editor.preferences.folding"
+  }
+}]]></component>
+  <component name="RunDashboard">
+    <option name="configurationTypes">
+      <set>
+        <option value="ShConfigurationType" />
+        <option value="tests" />
+      </set>
+    </option>
+  </component>
+  <component name="RunManager" selected="Python.find_cherries">
+    <configuration name="find_cherries" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <module name="diffour" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="C:\work\diffour\find_cherries.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Python tests for test_commit.Test" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="diffour" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_commit.Test&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Python tests for test_commit.Test.test_add_neighbor" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="diffour" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_commit.Test.test_add_neighbor&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Python tests for test_commit.Test.test_dummy" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="diffour" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_commit.Test.test_dummy&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Python tests for test_commit.Test.test_is_child_of" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="diffour" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_commit.Test.test_is_child_of&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Python tests for test_commit.Test.test_parse_commit_string" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="diffour" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_commit.Test.test_parse_commit_string&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python tests.Python tests for test_commit.Test" />
+        <item itemvalue="Python tests.Python tests for test_commit.Test.test_add_neighbor" />
+        <item itemvalue="Python tests.Python tests for test_commit.Test.test_is_child_of" />
+        <item itemvalue="Python tests.Python tests for test_commit.Test.test_parse_commit_string" />
+        <item itemvalue="Python tests.Python tests for test_commit.Test.test_dummy" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-ce3d9afa04ac-ba05f1cad1b1-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-242.20224.347" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="" />
+      <created>1723569704733</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1723569704733</updated>
+    </task>
+    <task id="LOCAL-00001" summary="grabbing commits and their diffs&#10;parsing most commits and diffs works">
+      <option name="closed" value="true" />
+      <created>1723633618550</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1723633618550</updated>
+    </task>
+    <task id="LOCAL-00002" summary="paralellizing stuff">
+      <option name="closed" value="true" />
+      <created>1723636309369</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1723636309369</updated>
+    </task>
+    <task id="LOCAL-00003" summary="sim_hash-bit_masking integrated">
+      <option name="closed" value="true" />
+      <created>1723641502403</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1723641502403</updated>
+    </task>
+    <task id="LOCAL-00004" summary="better hash function">
+      <option name="closed" value="true" />
+      <created>1723643449947</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1723643449947</updated>
+    </task>
+    <task id="LOCAL-00005" summary="added shingle mingling">
+      <option name="closed" value="true" />
+      <created>1723651510946</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1723651510946</updated>
+    </task>
+    <task id="LOCAL-00006" summary="cherry_candidates found, now (identical + close candidates)">
+      <option name="closed" value="true" />
+      <created>1723659570960</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1723659570960</updated>
+    </task>
+    <task id="LOCAL-00007" summary="sort into cherry pairs and candidate pairs">
+      <option name="closed" value="true" />
+      <created>1723669444085</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1723669444085</updated>
+    </task>
+    <task id="LOCAL-00008" summary="started adding tests">
+      <option name="closed" value="true" />
+      <created>1723714097101</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1723714097101</updated>
+    </task>
+    <task id="LOCAL-00009" summary="test_commit done">
+      <option name="closed" value="true" />
+      <created>1723729401091</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1723729401091</updated>
+    </task>
+    <task id="LOCAL-00010" summary="added cherry_rea">
+      <option name="closed" value="true" />
+      <created>1723741070851</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1723741070851</updated>
+    </task>
+    <task id="LOCAL-00011" summary="cherry reaper works">
+      <option name="closed" value="true" />
+      <created>1723742095816</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1723742095816</updated>
+    </task>
+    <task id="LOCAL-00012" summary="before filtering step">
+      <option name="closed" value="true" />
+      <created>1723761000585</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1723761000585</updated>
+    </task>
+    <task id="LOCAL-00013" summary="added graph of neighboring connections">
+      <option name="closed" value="true" />
+      <created>1723824467937</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1723824467937</updated>
+    </task>
+    <task id="LOCAL-00014" summary="saving graph, added X-provenance">
+      <option name="closed" value="true" />
+      <created>1723830899801</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1723830899801</updated>
+    </task>
+    <task id="LOCAL-00015" summary="cherry pick graph done and saveable">
+      <option name="closed" value="true" />
+      <created>1723845570294</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1723845570294</updated>
+    </task>
+    <task id="LOCAL-00016" summary="renamed stuff a bit">
+      <option name="closed" value="true" />
+      <created>1723850029823</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1723850029823</updated>
+    </task>
+    <task id="LOCAL-00017" summary="tests work again">
+      <option name="closed" value="true" />
+      <created>1723851084968</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1723851084968</updated>
+    </task>
+    <task id="LOCAL-00018" summary="starting combination of similarity connections to one edge type">
+      <option name="closed" value="true" />
+      <created>1723885439713</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1723885439713</updated>
+    </task>
+    <task id="LOCAL-00019" summary="added type hints">
+      <option name="closed" value="true" />
+      <created>1723899573720</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1723899573720</updated>
+    </task>
+    <task id="LOCAL-00020" summary="tests caught up with test_commit.py">
+      <option name="closed" value="true" />
+      <created>1723909828439</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1723909828439</updated>
+    </task>
+    <task id="LOCAL-00021" summary="fixed most pedantic PEP and other pyCharm warnings">
+      <option name="closed" value="true" />
+      <created>1723911319307</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1723911319307</updated>
+    </task>
+    <task id="LOCAL-00022" summary="small bug fix">
+      <option name="closed" value="true" />
+      <created>1723915187522</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1723915187522</updated>
+    </task>
+    <task id="LOCAL-00023" summary="added git preprocessing">
+      <option name="closed" value="true" />
+      <created>1723921461014</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1723921461014</updated>
+    </task>
+    <task id="LOCAL-00024" summary="bit better parsing, tests caught up again">
+      <option name="closed" value="true" />
+      <created>1723978013900</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1723978013900</updated>
+    </task>
+    <task id="LOCAL-00025" summary="before online gitoutput-stream processing">
+      <option name="closed" value="true" />
+      <created>1723981839891</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1723981839891</updated>
+    </task>
+    <task id="LOCAL-00026" summary="after online git-outputstream processing!">
+      <option name="closed" value="true" />
+      <created>1723987197978</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1723987197978</updated>
+    </task>
+    <task id="LOCAL-00027" summary="added type hints everywhere">
+      <option name="closed" value="true" />
+      <created>1723994302412</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1723994302412</updated>
+    </task>
+    <task id="LOCAL-00028" summary="caught up the tests">
+      <option name="closed" value="true" />
+      <created>1723994612147</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1723994612147</updated>
+    </task>
+    <task id="LOCAL-00029" summary="added parent relation (not tested yet)">
+      <option name="closed" value="true" />
+      <created>1723998448653</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1723998448653</updated>
+    </task>
+    <task id="LOCAL-00030" summary="added tons of comments">
+      <option name="closed" value="true" />
+      <created>1724002005095</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1724002005095</updated>
+    </task>
+    <task id="LOCAL-00031" summary="removed some unncessary comments">
+      <option name="closed" value="true" />
+      <created>1724027493464</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1724027493464</updated>
+    </task>
+    <task id="LOCAL-00032" summary="code seems bug-free again">
+      <option name="closed" value="true" />
+      <created>1724078713157</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1724078713157</updated>
+    </task>
+    <task id="LOCAL-00033" summary="before bucketing in buckets">
+      <option name="closed" value="true" />
+      <created>1724079653910</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1724079653910</updated>
+    </task>
+    <task id="LOCAL-00034" summary="still before bucketing in buckets">
+      <option name="closed" value="true" />
+      <created>1724080119240</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1724080119240</updated>
+    </task>
+    <option name="localTasksCounter" value="35" />
+    <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="added cherry_rea" />
+    <MESSAGE value="cherry reaper works" />
+    <MESSAGE value="before filtering step" />
+    <MESSAGE value="added graph of neighboring connections" />
+    <MESSAGE value="saving graph, added X-provenance" />
+    <MESSAGE value="cherry pick graph done and saveable" />
+    <MESSAGE value="renamed stuff a bit" />
+    <MESSAGE value="tests work again" />
+    <MESSAGE value="starting combination of similarity connections to one edge type" />
+    <MESSAGE value="added type hints" />
+    <MESSAGE value="tests caught up with test_commit.py" />
+    <MESSAGE value="fixed most pedantic PEP and other pyCharm warnings" />
+    <MESSAGE value="small bug fix" />
+    <MESSAGE value="added git preprocessing" />
+    <MESSAGE value="bit better parsing, tests caught up again" />
+    <MESSAGE value="before online gitoutput-stream processing" />
+    <MESSAGE value="after online git-outputstream processing!" />
+    <MESSAGE value="added type hints everywhere" />
+    <MESSAGE value="caught up the tests" />
+    <MESSAGE value="added parent relation (not tested yet)" />
+    <MESSAGE value="added tons of comments" />
+    <MESSAGE value="removed some unncessary comments" />
+    <MESSAGE value="code seems bug-free again" />
+    <MESSAGE value="before bucketing in buckets" />
+    <MESSAGE value="still before bucketing in buckets" />
+    <option name="LAST_COMMIT_MESSAGE" value="still before bucketing in buckets" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/find_cherries.py</url>
+          <line>289</line>
+          <option name="timeStamp" value="227" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/test_commit.py</url>
+          <line>393</line>
+          <option name="timeStamp" value="251" />
+        </line-breakpoint>
+      </breakpoints>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
+    </breakpoint-manager>
+    <watches-manager>
+      <configuration name="PythonConfigurationType">
+        <watch expression="final_commits" />
+      </configuration>
+    </watches-manager>
+  </component>
+</project>
