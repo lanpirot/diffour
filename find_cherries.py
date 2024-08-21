@@ -24,7 +24,7 @@ from joblib import Parallel, delayed
 
 full_sample: bool = True  # a complete run, or only a test run with a small sample size?
 add_complete_parent_relation: bool = False  # store complete git graph (by parent relation), or only parent-relation for relevant nodes?
-commit_limit: int = 100000  # max number of commits of a repository, we sample
+commit_limit: int = 10**7  # max number of commits of a repository, we sample
 
 repo_folder: str = "../data/cherry_repos/"
 save_folder: str = "cherry_data/"
@@ -34,7 +34,7 @@ diff_marker: str = "####xxx_next_diff_xxx####"
 pretty_format: str = commit_marker + "%n%P%n%H%n%an%n%s%b%n" + diff_marker
 
 no_merges: str = "" if add_complete_parent_relation else " --no-merges"
-git_command: str = f"git log --all{no_merges} --date-order --pretty=format:\"{pretty_format}\" -p -U3 -n {commit_limit}"
+git_command: str = f"git log --all{no_merges} --date-order --pretty=format:\"{pretty_format}\" -p -U0 -n {commit_limit}"
 
 
 # prepare each git repo, and .gitattributes file
@@ -119,16 +119,16 @@ class InnerBuckets:
 
 
 def bucketize_buckets(commits: list[commit.Commit]) -> dict[int, InnerBuckets]:
-    bitmask_buckets: dict[int, set[commit.Commit]] = {c.bit_mask: set() for c in commits}
+    signa_buckets: dict[int, set[commit.Commit]] = {c.commit_lsh_signature: set() for c in commits}
     for cd in commits:
-        bitmask_buckets[cd.bit_mask].add(cd)
+        signa_buckets[cd.commit_lsh_signature].add(cd)
     buckets: dict[int, InnerBuckets] = dict()
 
-    for bm in bitmask_buckets:
-        bitmask_bucket: set[commit.Commit] = bitmask_buckets[bm]
-        inner_buckets: InnerBuckets = InnerBuckets({c.hsh: set() for c in bitmask_bucket})
-        for c in bitmask_bucket:
-            inner_buckets[c.hsh].add(c)
+    for bm in signa_buckets:
+        signa_bucket: set[commit.Commit] = signa_buckets[bm]
+        inner_buckets: InnerBuckets = InnerBuckets({c.commit_fine_signature: set() for c in signa_bucket})
+        for c in signa_bucket:
+            inner_buckets[c.commit_fine_signature].add(c)
         buckets[bm] = inner_buckets
     return buckets
 
@@ -143,18 +143,19 @@ def get_candidate_groups(commits: list[commit.Commit]) -> dict[int, InnerBuckets
     orig_buckets: dict[int, InnerBuckets] = bucketize_buckets(commits)
     mutable_buckets: dict[int, InnerBuckets] = bucketize_buckets(commits)
 
-    # tuple of rotated and original bitmasks
-    bit_masks: list[tuple[int, int]] = [(bm, bm) for bm in orig_buckets.keys()]
+    # tuple of rotated and original signatures
+    signatures: list[tuple[int, int]] = [(s, s) for s in orig_buckets.keys()]
     for i in range(commit.bit_mask_length):
-        bit_masks = [(commit.rotate_left(bm[0]), bm[1]) for bm in bit_masks]
-        bit_masks = sorted(bit_masks, key=lambda x: x[0])
-        for j in range(len(bit_masks)):
-            if commit.is_similar_bitmask(bit_masks[j][0], bit_masks[(j + 1) % len(bit_masks)][0])[0]:
-                mi, ma = min(bit_masks[j][1], bit_masks[j + 1][1]), max(bit_masks[j][1], bit_masks[j + 1][1])
-                # we found commits with neighboring bitmasks after some rotation, they also have highly similar bitmasks
+        signatures = [(commit.rotate_left(bm[0]), bm[1]) for bm in signatures]
+        signatures = sorted(signatures, key=lambda x: x[0])
+        for j in range(len(signatures)):
+            bucket_offset = 1
+            while commit.is_similar_signature(signatures[j][0], signatures[(j + bucket_offset) % len(signatures)][0])[0] and bucket_offset < 2:
+                mi, ma = min(signatures[j][1], signatures[j + 1][1]), max(signatures[j][1], signatures[j + 1][1])
+                # we found commits with neighboring signatures after some rotation, they also have highly similar signatures
                 # add the groups of each representative to the other representative's group
                 mutable_buckets[mi].add(orig_buckets[ma])
-                mutable_buckets[ma].add(orig_buckets[mi])
+                bucket_offset += 1
 
     # remove commits without partners
     return remove_singles(mutable_buckets)
@@ -166,13 +167,13 @@ def create_commit_id_to_commit(commits: list[commit.Commit]) -> dict[str, commit
 
 
 # connect all members of s1 to s2
-def connect_all(s1: set[commit.Commit], s2: set[commit.Commit], text_sim: tuple[bool, float]) -> None:
+def connect_all(s1: set[commit.Commit], s2: set[commit.Commit], patch_sim: tuple[bool, float]) -> None:
     for s in s1:
         for t in s2:
             if s == t:
                 continue
             mi, ma = s.get_ordered_commit_pair(t)
-            ma.add_neighbor(mi, text_sim)
+            ma.add_neighbor(mi, patch_sim)
 
 
 # add a connection to our graph for all commits, that we deem highly similar, based on their udiff
@@ -183,9 +184,9 @@ def connect_similar_neighbors(buckets: dict[int, InnerBuckets]) -> None:
                 if i == j:
                     connect_all(i, i, (True, 1.0))
                 else:
-                    text_sim_b, text_sim = get_any(i).has_similar_text_to(get_any(j))
-                    if text_sim_b:
-                        connect_all(i, j, (text_sim_b, text_sim))
+                    patch_sim_b, patch_sim = get_any(i).is_similar_patch_to(get_any(j))
+                    if patch_sim_b:
+                        connect_all(i, j, (patch_sim_b, patch_sim))
 
 
 # add a connection to our graph for each picker and its cherries

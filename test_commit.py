@@ -36,19 +36,19 @@ class Test(TestCase):
 
     def test_is_similar_bitmask(self):
         bm1, bm2 = None, 1
-        self.assertEqual((False, None), commit.is_similar_bitmask(bm1, bm2))
+        self.assertEqual((False, None), commit.is_similar_signature(bm1, bm2))
         bm1, bm2 = -12321, None
-        self.assertEqual((False, None), commit.is_similar_bitmask(bm1, bm2))
+        self.assertEqual((False, None), commit.is_similar_signature(bm1, bm2))
 
         for i in range(100):
             bm1 = random.randint(0, 2 ** commit.bit_mask_length)
             bm2 = random.randint(0, 2 ** commit.bit_mask_length)
-            self.assertEqual((True, 1.0), commit.is_similar_bitmask(bm1, bm1))
-            self.assertEqual((True, 1.0), commit.is_similar_bitmask(bm2, bm2))
+            self.assertEqual((True, 1.0), commit.is_similar_signature(bm1, bm1))
+            self.assertEqual((True, 1.0), commit.is_similar_signature(bm2, bm2))
 
             bbm1, bbm2 = f"{bm1:0{commit.bit_mask_length}b}", f"{bm2:0{commit.bit_mask_length}b}"
             bit_sim = sum([1 for (b1, b2) in zip(bbm1, bbm2) if b1 == b2]) / commit.bit_mask_length
-            self.assertEqual((bit_sim > commit.min_bit_similarity, bit_sim), commit.is_similar_bitmask(bm1, bm2))
+            self.assertEqual((bit_sim > commit.min_bit_similarity, bit_sim), commit.is_similar_signature(bm1, bm2))
 
     def test_rotate_left(self):
         for i in range(100):
@@ -103,7 +103,7 @@ class Test(TestCase):
                 vector[j] = random.randint(0, 2 ** commit.bit_mask_length) - random.randint(0, 2 ** commit.bit_mask_length)
                 if vector[j] >= 0:
                     gz += 1
-            self.assertEqual(commit.count_same_bits(commit.sim_hash_sum_to_bit_mask(vector), commit.all_ones), gz)
+            self.assertEqual(commit.count_same_bits(commit.sim_hash_sum_to_signature(vector), commit.all_ones), gz)
 
     def test_mingle_shingles(self):
         test_list = [("a", 1), ("b", 2), ("c", 3), ("d", 4)]
@@ -136,7 +136,7 @@ class Test(TestCase):
             c = commit.Commit(commit_str, self.diff_marker)
             # self.assertEqual(c.date, 2**commit.bit_mask_length - i)
             self.assertTrue(len(c.author) > 10)
-            self.assertTrue(0 <= c.bit_mask <= 2 ** commit.bit_mask_length)
+            self.assertTrue(0 <= c.commit_lsh_signature <= 2 ** commit.bit_mask_length)
             self.assertEqual(c.explicit_cherries, [])
             self.assertTrue(len(c.commit_id) == 40)
             self.assertEqual(c.is_root, False)
@@ -289,8 +289,8 @@ class Test(TestCase):
             c = commit.Commit(cm, self.diff_marker)
             patch_string = cm.split(self.diff_marker)[1][1:]
             patch_set = unidiff.PatchSet(patch_string)
-            self.assertEqual(c.get_bit_mask(patch_set, c.commit_message), c.get_bit_mask(patch_set, c.commit_message))
-            self.assertTrue(0 < c.get_bit_mask(patch_set, c.commit_message) < 2 ** commit.bit_mask_length)
+            self.assertEqual(c.patch_signature(patch_set, c.commit_message), c.patch_signature(patch_set, c.commit_message))
+            self.assertTrue(0 < c.patch_signature(patch_set, c.commit_message) < 2 ** commit.bit_mask_length)
 
     def test_dummy(self):
         dummy_info = [("commit_id" + str(i), "diff_marker" + str(i)) for i in range(10)]
@@ -325,7 +325,7 @@ class Test(TestCase):
     def test_has_similar_text_to(self):
         dummy_with = commit.dummy_cherry_commit("id", "marker")
         dummy_without = commit.dummy_cherry_commit("id", "marker")
-        self.assertEqual((False, None), dummy_with.has_similar_text_to(dummy_without))
+        self.assertEqual((False, None), dummy_with.is_similar_patch_to(dummy_without))
 
         dummy_diff_with = "diff --git a/sys/kern/imgact_elf.c b/sys/kern/imgact_elf.c\nindex 28ffdd03dd6d..494456ceeeae 100644\n--- a/sys/kern/imgact_elf.c\n+++ b/sys/kern/imgact_elf.c\n@@ -617,9 +617,9 @@ __elfN(map_insert)(const struct image_params *imgp, vm_map_t map,\n 	return (KERN_SUCCESS);\n }\n \n-static int __elfN(load_section)(const struct image_params *imgp,\n-    vm_ooffset_t offset, caddr_t vmaddr, size_t memsz, size_t filsz,\n-    vm_prot_t prot)\n+static int\n+__elfN(load_section)(const struct image_params *imgp, vm_ooffset_t offset,\n+    caddr_t vmaddr, size_t memsz, size_t filsz, vm_prot_t prot)\n {\n 	struct sf_buf *sf;\n 	size_t map_len;\n"
         dummy_diff_without = "diff --git a/sys/kern/imgact_elf.c b/sys/kern/imgact_elf.c\n--- a/sys/kern/imgact_elf.c\n+++ b/sys/kern/imgact_elf.c\n@@ -617,9 +617,9 @@ __elfN(map_insert)(const struct image_params *imgp, vm_map_t map,\n 	return (KERN_SUCCESS);\n }\n \n-static int __elfN(load_section)(const struct image_params *imgp,\n-    vm_ooffset_t offset, caddr_t vmaddr, size_t memsz, size_t filsz,\n-    vm_prot_t prot)\n+static int\n+__elfN(load_section)(const struct image_params *imgp, vm_ooffset_t offset,\n+    caddr_t vmaddr, size_t memsz, size_t filsz, vm_prot_t prot)\n {\n 	struct sf_buf *sf;\n 	size_t map_len;\n"
@@ -333,22 +333,22 @@ class Test(TestCase):
         dummy_without.parseable = True
         dummy_with.patch_string = dummy_with.clean_patch_string(unidiff.PatchSet(dummy_diff_with).__str__())
         dummy_without.patch_string = dummy_with.clean_patch_string(unidiff.PatchSet(dummy_diff_without).__str__())
-        self.assertEqual((True, 1.0), dummy_with.has_similar_text_to(dummy_with))
-        self.assertEqual((True, 1.0), dummy_without.has_similar_text_to(dummy_without))
-        self.assertEqual((True, 1.0), dummy_with.has_similar_text_to(dummy_without))
+        self.assertEqual((True, 1.0), dummy_with.is_similar_patch_to(dummy_with))
+        self.assertEqual((True, 1.0), dummy_without.is_similar_patch_to(dummy_without))
+        self.assertEqual((True, 1.0), dummy_with.is_similar_patch_to(dummy_without))
 
         dummy_without.patch_string = dummy_without.clean_patch_string((unidiff.PatchSet(self.dummy_diff*4)).__str__())
-        (truthy, floaty) = dummy_with.has_similar_text_to(dummy_without)
+        (truthy, floaty) = dummy_with.is_similar_patch_to(dummy_without)
         self.assertEqual(False, truthy)
         self.assertTrue(0 < floaty < 1)
 
         dummy_without.patch_string = dummy_without.clean_patch_string(unidiff.PatchSet(self.dummy_diff).__str__())
-        self.assertEqual((False, 0.0), dummy_with.has_similar_text_to(dummy_without))
+        self.assertEqual((False, 0.0), dummy_with.is_similar_patch_to(dummy_without))
 
     def test_add_neighbor(self):
         dummy = commit.dummy_cherry_commit("dummy", "marker")
         dummy.parseable = True
-        dummy.bit_mask = 1
+        dummy.commit_lsh_signature = 1
         dummy.patch_string = self.dummy_diff
         self.assertEqual([], dummy.neighbor_connections)
         dummy.add_neighbor(dummy, False)
@@ -359,7 +359,7 @@ class Test(TestCase):
 
         neighbor = commit.dummy_cherry_commit("neighbor", "marker")
         neighbor.parseable = True
-        neighbor.bit_mask = 3
+        neighbor.commit_lsh_signature = 3
         neighbor.patch_string = self.dummy_diff
         dummy.add_neighbor(neighbor, False)
         neighbors += [commit.Neighbor(neighbor=neighbor, sim=True, bit_sim=63 / 64, levenshtein_sim=1.0, explicit_cherrypick=False, is_child_of=False)]
