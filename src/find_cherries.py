@@ -24,7 +24,7 @@ from joblib import Parallel, delayed
 
 full_sample: bool = True  # a complete run, or only a test run with a small sample size?
 add_complete_parent_relation: bool = False  # store complete git graph (by parent relation), or only parent-relation for relevant nodes?
-commit_limit: int = 10**3  # max number of commits of a repository, we sample
+commit_limit: int = 10 ** 3  # max number of commits of a repository, we sample
 max_bucket_overspill = 1
 
 repo_folder: str = "../data/cherry_repos/"
@@ -32,7 +32,7 @@ save_folder: str = "cherry_data/"
 
 commit_marker: str = "====xxx_next_commit_xxx===="
 diff_marker: str = "####xxx_next_diff_xxx####"
-pretty_format: str = commit_marker + "%n%P%n%H%n%an%n%s%b%n" + diff_marker
+pretty_format: str = commit_marker + "%n%H%n%P%n%an%n%s%b%n" + diff_marker
 
 no_merges: str = "" if add_complete_parent_relation else " --no-merges"
 git_command: str = f"git log --all{no_merges} --date-order --pretty=format:\"{pretty_format}\" -p -U3 -n {commit_limit}"
@@ -63,16 +63,29 @@ def parse_git_output(folder: str) -> list[commit.Commit]:
     return commits
 
 
+def get_branch_dict() -> dict[str, str]:
+    branch_ids: str = subprocess.run(f"git name-rev --all", capture_output=True, text=True, shell=True).stdout.strip()
+    branch_dict: dict[str, str] = dict()
+    for commit_branch in branch_ids.splitlines():
+        commit_branch = commit_branch.split(" ")
+        commit_id, branch = commit_branch[0], commit_branch[1].split("~")[0].split("^")[0]
+        branch_dict[commit_id] = branch
+    return branch_dict
+
+
 # git log output is sometimes gigantic, bite off chunks to parse
 # this saves space (don't save complete output in memory)
 # this saves time (don't bite off line by line)
 def read_in_commits_from_stdout(process: subprocess.Popen) -> list[commit.Commit]:
     commits: list[commit.Commit] = []
     remnant: str = ""
+    commit.Commit.branch_dict = get_branch_dict()
     commit_marker_newline: str = commit_marker + "\n"
+
     while True:
         chunk: str = process.stdout.read(2 ** 20 * 10)  # Read up to 10MB at a time
         if not chunk:
+            commit_id = next(iter(remnant.splitlines()), 'ERROR: NO COMMIT ID FOUND!')
             commits.append(commit.Commit(remnant, diff_marker))
             break
         if commit_marker_newline not in chunk:
@@ -81,9 +94,10 @@ def read_in_commits_from_stdout(process: subprocess.Popen) -> list[commit.Commit
         # Prepend any leftover data from the previous chunk
         chunk = remnant + chunk
         new_commits = chunk.split(commit_marker_newline)
-        for nc in new_commits[:-1]:
-            if nc:
-                commits.append(commit.Commit(nc, diff_marker))
+        for new_commit in new_commits[:-1]:
+            if new_commit:
+                commit_id = next(iter(new_commit.splitlines()), 'ERROR: NO COMMIT ID FOUND!')
+                commits.append(commit.Commit(new_commit, diff_marker))
         remnant = new_commits[-1]
     process.stdout.close()
     process.wait()
@@ -151,8 +165,10 @@ def get_candidate_groups(commits: list[commit.Commit]) -> dict[int, InnerBuckets
         signatures = sorted(signatures, key=lambda x: x[0])
         for j in range(len(signatures)):
             bucket_offset = 1
-            while bucket_offset < max_bucket_overspill + 1 and commit.is_similar_signature(signatures[j][0], signatures[(j + bucket_offset) % len(signatures)][0])[0]:
-                mi, ma = min(signatures[j][1], signatures[(j + bucket_offset) % len(signatures)][1]), max(signatures[j][1], signatures[(j + bucket_offset) % len(signatures)][1])
+            while (bucket_offset < max_bucket_overspill + 1 and
+                   commit.is_similar_signature(signatures[j][0], signatures[(j + bucket_offset) % len(signatures)][0])[0]):
+                mi, ma = (min(signatures[j][1], signatures[(j + bucket_offset) % len(signatures)][1]),
+                          max(signatures[j][1], signatures[(j + bucket_offset) % len(signatures)][1]))
                 # a neighboring bucket has commits with a highly similar signature, let the buckets overspill:
                 mutable_buckets[mi].add(orig_buckets[ma])
                 bucket_offset += 1
@@ -263,7 +279,8 @@ def analyze_repo(folder: str) -> None:
           f"#explicit picks: {sum([len(c.explicit_cherries) for c in commits if c.has_explicit_cherries])}")
 
     buckets: dict[int, InnerBuckets] = get_candidate_groups(parseable_commits)
-    non_parseable_buckets: dict[int, InnerBuckets] = {(2 ** commit.bit_mask_length + i): InnerBuckets({0: {unparseable_commits[i]}}) for i in range(len(unparseable_commits))}
+    non_parseable_buckets: dict[int, InnerBuckets] = {(2 ** commit.bit_mask_length + i): InnerBuckets({0: {unparseable_commits[i]}}) for i in
+                                                      range(len(unparseable_commits))}
     buckets = {**buckets, **non_parseable_buckets}
 
     connect_similar_neighbors(buckets)

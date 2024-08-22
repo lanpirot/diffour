@@ -1,3 +1,4 @@
+import subprocess
 from typing import Optional
 
 import unidiff
@@ -100,8 +101,8 @@ def get_hunk_string(hunk: unidiff.patch) -> str:
 
 
 # an ugly parser of our git string, expects a string of the form
-# parent_id
 # commit_id
+# parent_id
 # author_name
 # commit_message
 # <DIFF_MARKER>
@@ -116,7 +117,7 @@ def parse_commit_str(commit_str: str, diff_marker: str):
 
     if len(commit_header) < 4:
         raise ValueError
-    (parent_idstring, commit_id, author, commit_message) = (commit_header[0], commit_header[1], commit_header[2], commit_header[3:][0])
+    (commit_id, parent_idstring, author, commit_message) = (commit_header[0], commit_header[1], commit_header[2], commit_header[3:][0])
     parent_ids: list[str] = parent_idstring.split(" ")
     parent_ids = [p for p in parent_ids if len(p) > 0]
 
@@ -134,7 +135,7 @@ def parse_commit_str(commit_str: str, diff_marker: str):
     except unidiff.UnidiffParseError:
         parseable = False
         patch_set = None
-    return parent_ids, commit_id, author, commit_message, patch_set, parseable
+    return commit_id, parent_ids, author, commit_message, patch_set, parseable
 
 
 # Commit: a class to store all information of a commit, we can gather from the git log parsing
@@ -142,18 +143,22 @@ def parse_commit_str(commit_str: str, diff_marker: str):
 #         and a fine hash of the whole diff
 class Commit:
     _date_id: int = 2 ** bit_mask_length  # the cherrypicks are sorted by date, we give them an ID by our processing order
+    branch_dict: dict[str, str] = dict()
 
     def __init__(self, commit_str: str, diff_marker: str) -> None:
         self.date: int = self.__class__._date_id
         self.__class__._date_id -= 1
 
-        (parent_ids, commit_id, author, commit_message, patch_set, parseable) = parse_commit_str(commit_str, diff_marker)
-        # TODO: find out branch of commit
+        (commit_id, parent_ids, author, commit_message, patch_set, parseable) = parse_commit_str(commit_str, diff_marker)
 
-        self.commit_message: str = commit_message
-        self.author: str = author
-        self.parent_ids: list[str] = parent_ids
+        try:
+            self.branch_id: str = self.branch_dict[commit_id]
+        except KeyError:
+            self.branch_id: str = "unknown"
         self.commit_id: str = commit_id
+        self.parent_ids: list[str] = parent_ids
+        self.author: str = author
+        self.commit_message: str = commit_message
         self.is_root: bool = len(self.parent_ids) == 0
         self.rev_id: Optional[str] = self.get_rev_id()
         self.has_explicit_cherries: bool = self.has_explicit_cherrypick()
@@ -197,11 +202,13 @@ class Commit:
             is_similar = bit_sim and patch_sim
 
             if other.other_is_in_my_cherries(self):
-                neighbor = Neighbor(neighbor=self, sim=is_similar, bit_sim=bit_sim_level, patch_sim=patch_sim_level, explicit_cherrypick=True, is_child_of=False)
+                neighbor = Neighbor(neighbor=self, sim=is_similar, bit_sim=bit_sim_level, patch_sim=patch_sim_level, explicit_cherrypick=True,
+                                    is_child_of=False)
                 other.neighbor_connections.add(neighbor)
                 return
             else:
-                neighbor = Neighbor(neighbor=other, sim=is_similar, bit_sim=bit_sim_level, patch_sim=patch_sim_level, explicit_cherrypick=self.other_is_in_my_cherries(other), is_child_of=False)
+                neighbor = Neighbor(neighbor=other, sim=is_similar, bit_sim=bit_sim_level, patch_sim=patch_sim_level,
+                                    explicit_cherrypick=self.other_is_in_my_cherries(other), is_child_of=False)
 
         self.neighbor_connections.add(neighbor)
 
@@ -248,7 +255,8 @@ class Commit:
             file_name: str = patched_file.source_file + patched_file.target_file
             if patched_file.is_binary_file:
                 # use the binary file hash for its own signature else fallback to commit.message
-                ret.add(sign_hunk(file_name + "\n" + next((line for line in patched_file.patch_info if line.startswith("index ")), self.commit_message)))
+                ret.add(sign_hunk(file_name + "\n" + next((line for line in patched_file.patch_info if line.startswith("index ")),
+                                                          self.commit_message)))
             else:
                 ret = ret.union({sign_hunk(file_name + "\n" + get_hunk_string(hunk)) for hunk in patched_file})
         return ret

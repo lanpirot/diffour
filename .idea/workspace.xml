@@ -4,10 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="neighbor relations a bit more efficient">
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="bug fixed: set.add returns None, set.union returns new set ....">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/commit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/find_cherries.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/test_commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_commit.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,7 +50,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Python tests.Python tests for test_commit.Test.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.executor": "Debug",
     "Python tests.Python tests for test_commit.Test.test_add_neighbor.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_claims_cherry_pick.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_clean_patch_string.executor": "Run",
@@ -76,12 +77,12 @@
     "Python tests.Python tests for test_commit.Test.test_setup.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_sim_hash_sum_to_bit_mask.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_sim_hash_weighted.executor": "Run",
-    "Python.find_cherries.executor": "Debug",
+    "Python.find_cherries.executor": "Run",
     "Python.main.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
-    "settings.editor.selected.configurable": "editor.preferences.folding"
+    "settings.editor.selected.configurable": "Errors"
   }
 }]]></component>
   <component name="RecentsManager">
@@ -534,7 +535,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724262239987</updated>
     </task>
-    <option name="localTasksCounter" value="40" />
+    <task id="LOCAL-00040" summary="bug fixed: set.add returns None, set.union returns new set ....">
+      <option name="closed" value="true" />
+      <created>1724263547699</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1724263547699</updated>
+    </task>
+    <option name="localTasksCounter" value="41" />
     <servers />
   </component>
   <component name="Vcs.Log.History.Properties">
@@ -560,7 +569,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="cherry pick graph done and saveable" />
     <MESSAGE value="renamed stuff a bit" />
     <MESSAGE value="tests work again" />
     <MESSAGE value="starting combination of similarity connections to one edge type" />
@@ -585,16 +593,12 @@
     <MESSAGE value="bugfix: #explicit picks == picker-&gt;cherry" />
     <MESSAGE value="somehow stuff slowed down immensely" />
     <MESSAGE value="neighbor relations a bit more efficient" />
-    <option name="LAST_COMMIT_MESSAGE" value="neighbor relations a bit more efficient" />
+    <MESSAGE value="bug fixed: set.add returns None, set.union returns new set ...." />
+    <option name="LAST_COMMIT_MESSAGE" value="bug fixed: set.add returns None, set.union returns new set ...." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/find_cherries.py</url>
-          <line>292</line>
-          <option name="timeStamp" value="227" />
-        </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/test/test_commit.py</url>
           <line>393</line>
@@ -609,6 +613,11 @@
           <url>file://$PROJECT_DIR$/src/commit.py</url>
           <line>185</line>
           <option name="timeStamp" value="269" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/find_cherries.py</url>
+          <line>309</line>
+          <option name="timeStamp" value="287" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

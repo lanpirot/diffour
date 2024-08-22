@@ -105,19 +105,6 @@ class Test(TestCase):
                     gz += 1
             self.assertEqual(commit.count_same_bits(commit.sim_hash_sum_to_signature(vector), commit.all_ones), gz)
 
-    def test_mingle_shingles(self):
-        test_list = [("a", 1), ("b", 2), ("c", 3), ("d", 4)]
-        self.assertEqual(commit.mingle_shingles(test_list, 1), test_list)
-        self.assertEqual(commit.mingle_shingles(test_list, 2), [('ab', 1), ('bc', 2), ('cd', 3)])
-        self.assertEqual(commit.mingle_shingles(test_list, 3), [('abc', 2), ('bcd', 3)])
-        self.assertEqual(commit.mingle_shingles(test_list, 4), [('abcd', 2)])
-
-        test_list = [("a", 1), ("", 2), ("c", 3), ("d", 4)]
-        self.assertEqual(commit.mingle_shingles(test_list, 1), test_list)
-        self.assertEqual(commit.mingle_shingles(test_list, 2), [('a', 1), ('c', 2), ('cd', 3)])
-        self.assertEqual(commit.mingle_shingles(test_list, 3), [('ac', 2), ('cd', 3)])
-        self.assertEqual(commit.mingle_shingles(test_list, 4), [('acd', 2)])
-
     def test_get_hunk_strings(self):
         w_context, w_body = 1, 10
         Hunk_line = namedtuple('line', ['value', 'is_context', 'is_added', 'is_removed'])
@@ -142,7 +129,7 @@ class Test(TestCase):
             self.assertEqual(c.is_root, False)
             self.assertTrue(len(c.parent_ids[0]) == 40)
             self.assertEqual(c.parseable, True)
-            self.assertTrue(len(c.patch_string) > 0)
+            self.assertTrue(len(c.patch_set) > 0)
             self.assertTrue(c.rev_id is None or len(c.rev_id) == 40)
 
     def test_parse_commit_string(self):
@@ -350,7 +337,7 @@ class Test(TestCase):
         dummy.parseable = True
         dummy.commit_lsh_signature = 1
         dummy.patch_string = self.dummy_diff
-        self.assertEqual([], dummy.neighbor_connections)
+        self.assertEqual(set(), dummy.neighbor_connections)
         dummy.add_neighbor(dummy, False)
         neighbors = [commit.Neighbor(neighbor=dummy, sim=True, bit_sim=1.0, patch_sim=1.0, explicit_cherrypick=False, is_child_of=False)]
         self.assertEqual(neighbors, dummy.neighbor_connections)
