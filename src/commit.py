@@ -1,4 +1,3 @@
-import subprocess
 from typing import Optional
 
 import unidiff
@@ -10,8 +9,8 @@ from dataclasses import dataclass
 bit_mask_length: int = 64
 all_ones: int = 2 ** bit_mask_length - 1
 git_hash40: str = "[a-fA-F0-9]{40}"
-cherry_commit_message_pattern: str = rf"\(cherry picked from commit ({git_hash40})\)|X-original-commit: ({git_hash40})"
-git_origin_pattern: str = rf"GitOrigin-RevId: ({git_hash40})"
+cherry_commit_message_pattern: str = rf"[\(\s]cherry[- ]picked from commit ({git_hash40})[\)\s\n]|X-original-commit: ({git_hash40})"
+git_alt_id_pattern: str = rf"GitOrigin-RevId: ({git_hash40})"
 
 max_bit_diff: int = 5
 min_bit_similarity: float = (bit_mask_length - max_bit_diff) / bit_mask_length
@@ -82,7 +81,7 @@ def sign_hunk(hunk_str: str) -> int:
 
 # create a dummy cherry commit to populate the git graph with cherries we did not sample, but know of
 def dummy_cherry_commit(commit_id: str, diff_marker: str) -> 'Commit':
-    return Commit(f"\n{commit_id}\nA. Nonymous\n!!Dummy Commit!!\n{diff_marker}\n", diff_marker)
+    return Commit(f"{commit_id}\n\nA. Nonymous\n!!Dummy Commit!!\n{diff_marker}\n", diff_marker)
 
 
 def get_hunk_string(hunk: unidiff.patch) -> str:
@@ -160,7 +159,7 @@ class Commit:
         self.author: str = author
         self.commit_message: str = commit_message
         self.is_root: bool = len(self.parent_ids) == 0
-        self.rev_id: Optional[str] = self.get_rev_id()
+        self.alt_id: Optional[str] = self.get_alt_id()
         self.has_explicit_cherries: bool = self.has_explicit_cherrypick()
         self.explicit_cherries: list = self.get_explicit_cherrypicks()
         self.parseable: bool = parseable
@@ -215,14 +214,14 @@ class Commit:
     def is_child_of(self, other_commit: 'Commit') -> bool:
         return other_commit.commit_id in self.parent_ids
 
-    # test if commit message features a "GitOrigin-RevId"
-    def has_rev_id(self) -> bool:
-        return re.search(git_origin_pattern, self.commit_message) is not None
+    # test if commit message features a "GitOrigin-RevId" string
+    def has_alt_id(self) -> bool:
+        return re.search(git_alt_id_pattern, self.commit_message) is not None
 
-    def get_rev_id(self) -> Optional[str]:
-        if not self.has_rev_id():
+    def get_alt_id(self) -> Optional[str]:
+        if not self.has_alt_id():
             return None
-        return re.search(git_origin_pattern, self.commit_message).group(1)
+        return re.search(git_alt_id_pattern, self.commit_message).group(1)
 
     def has_explicit_cherrypick(self):
         return re.search(cherry_commit_message_pattern, self.commit_message) is not None
@@ -235,7 +234,7 @@ class Commit:
         return flattened_matches
 
     def other_is_in_my_cherries(self, other_commit: 'Commit') -> bool:
-        return other_commit.commit_id in self.explicit_cherries
+        return other_commit.commit_id in self.explicit_cherries or other_commit.alt_id in self.explicit_cherries
 
     # git log provides an ordering of commits, we parse commits in that order
     # was self parsed before other_commit?

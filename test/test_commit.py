@@ -130,7 +130,7 @@ class Test(TestCase):
             self.assertTrue(len(c.parent_ids[0]) == 40)
             self.assertEqual(c.parseable, True)
             self.assertTrue(len(c.patch_set) > 0)
-            self.assertTrue(c.rev_id is None or len(c.rev_id) == 40)
+            self.assertTrue(c.alt_id is None or len(c.alt_id) == 40)
 
     def test_parse_commit_string(self):
         cherry_messages = self.cherry_messages
@@ -146,7 +146,7 @@ class Test(TestCase):
             self.assertEqual(c.is_root, False)
             self.assertEqual(c.parent_ids, ["parentID"])
             self.assertEqual(c.parseable, True)
-            self.assertEqual(c.rev_id, "33299ac78503b3871b4a04f9def02497848eef57")
+            self.assertEqual(c.alt_id, "33299ac78503b3871b4a04f9def02497848eef57")
 
         c.commit_message = "\ncommitID\nauthor\nmessage1\nmessage2\n" + cm + "\n" + origin_id + "\n\n" + self.diff_marker + "\npseudo diff"
         c = commit.Commit(
@@ -159,17 +159,17 @@ class Test(TestCase):
 
     def test_has_rev_id(self):
         c = self.test_commit
-        self.assertEqual(c.has_rev_id(), True)
+        self.assertEqual(c.has_alt_id(), True)
 
         c.commit_message = "\ncommitID\nauthor\nmessage1\nmessage2\n\n\n\n" + self.diff_marker + "\npseudo diff"
-        self.assertEqual(c.has_rev_id(), False)
+        self.assertEqual(c.has_alt_id(), False)
 
     def test_get_rev_id(self):
         c = self.test_commit
-        self.assertEqual(c.get_rev_id(), 'aad8d335e2d876506a2948071644685ff99e14e4')
+        self.assertEqual(c.get_alt_id(), 'aad8d335e2d876506a2948071644685ff99e14e4')
 
         c.commit_message = "\ncommitID\nauthor\nmessage1\nmessage2\n\n\n\n" + self.diff_marker + "\npseudo diff"
-        self.assertEqual(c.get_rev_id(), None)
+        self.assertEqual(c.get_alt_id(), None)
 
     def test_has_explicit_cherrypick(self):
         cms = self.cherry_messages
@@ -188,43 +188,43 @@ class Test(TestCase):
     def test_other_is_in_my_cherries(self):
         c = self.test_commit
         d = self.test_commit2
-        c.commit_id, c.rev_id, c.explicit_cherries = "c", None, []
-        d.commit_id, d.rev_id, d.explicit_cherries = "d", None, []
+        c.commit_id, c.alt_id, c.explicit_cherries = "c", None, []
+        d.commit_id, d.alt_id, d.explicit_cherries = "d", None, []
         self.assertEqual(c.other_is_in_my_cherries(d), False)
         self.assertEqual(d.other_is_in_my_cherries(c), False)
         self.assertEqual(c.other_is_in_my_cherries(c), False)
         self.assertEqual(d.other_is_in_my_cherries(d), False)
 
-        c.commit_id, c.rev_id, c.explicit_cherries = "c", None, ["c"]
-        d.commit_id, d.rev_id, d.explicit_cherries = "d", None, []
+        c.commit_id, c.alt_id, c.explicit_cherries = "c", None, ["c"]
+        d.commit_id, d.alt_id, d.explicit_cherries = "d", None, []
         self.assertEqual(c.other_is_in_my_cherries(d), False)
         self.assertEqual(d.other_is_in_my_cherries(c), False)
         self.assertEqual(c.other_is_in_my_cherries(c), True)
         self.assertEqual(d.other_is_in_my_cherries(d), False)
 
-        c.commit_id, c.rev_id, c.explicit_cherries = "c", None, ["d"]
-        d.commit_id, d.rev_id, d.explicit_cherries = "d", None, []
+        c.commit_id, c.alt_id, c.explicit_cherries = "c", None, ["d"]
+        d.commit_id, d.alt_id, d.explicit_cherries = "d", None, []
         self.assertEqual(c.other_is_in_my_cherries(d), True)
         self.assertEqual(d.other_is_in_my_cherries(c), False)
         self.assertEqual(c.other_is_in_my_cherries(c), False)
         self.assertEqual(d.other_is_in_my_cherries(d), False)
 
-        c.commit_id, c.rev_id, c.explicit_cherries = "c", None, ["d"]
-        d.commit_id, d.rev_id, d.explicit_cherries = "d", None, ["c"]
+        c.commit_id, c.alt_id, c.explicit_cherries = "c", None, ["d"]
+        d.commit_id, d.alt_id, d.explicit_cherries = "d", None, ["c"]
         self.assertEqual(c.other_is_in_my_cherries(d), True)
         self.assertEqual(d.other_is_in_my_cherries(c), True)
         self.assertEqual(c.other_is_in_my_cherries(c), False)
         self.assertEqual(d.other_is_in_my_cherries(d), False)
 
-        c.commit_id, c.rev_id, c.explicit_cherries = "c", None, ["d"]
-        d.commit_id, d.rev_id, d.explicit_cherries = "d", "d", []
+        c.commit_id, c.alt_id, c.explicit_cherries = "c", None, ["d"]
+        d.commit_id, d.alt_id, d.explicit_cherries = "d", "d", []
         self.assertEqual(c.other_is_in_my_cherries(d), True)
         self.assertEqual(d.other_is_in_my_cherries(c), False)
         self.assertEqual(c.other_is_in_my_cherries(c), False)
         self.assertEqual(d.other_is_in_my_cherries(d), False)
 
-        c.commit_id, c.rev_id, c.explicit_cherries = "c", None, ["e", "d"]
-        d.commit_id, d.rev_id, d.explicit_cherries = "d", "d", ["c", "f"]
+        c.commit_id, c.alt_id, c.explicit_cherries = "c", None, ["e", "d"]
+        d.commit_id, d.alt_id, d.explicit_cherries = "d", "d", ["c", "f"]
         self.assertEqual(c.other_is_in_my_cherries(d), True)
         self.assertEqual(d.other_is_in_my_cherries(c), True)
         self.assertEqual(c.other_is_in_my_cherries(c), False)

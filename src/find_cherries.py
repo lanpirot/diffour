@@ -85,7 +85,6 @@ def read_in_commits_from_stdout(process: subprocess.Popen) -> list[commit.Commit
     while True:
         chunk: str = process.stdout.read(2 ** 20 * 10)  # Read up to 10MB at a time
         if not chunk:
-            commit_id = next(iter(remnant.splitlines()), 'ERROR: NO COMMIT ID FOUND!')
             commits.append(commit.Commit(remnant, diff_marker))
             break
         if commit_marker_newline not in chunk:
@@ -96,7 +95,6 @@ def read_in_commits_from_stdout(process: subprocess.Popen) -> list[commit.Commit
         new_commits = chunk.split(commit_marker_newline)
         for new_commit in new_commits[:-1]:
             if new_commit:
-                commit_id = next(iter(new_commit.splitlines()), 'ERROR: NO COMMIT ID FOUND!')
                 commits.append(commit.Commit(new_commit, diff_marker))
         remnant = new_commits[-1]
     process.stdout.close()
@@ -182,6 +180,11 @@ def create_commit_id_to_commit(commits: list[commit.Commit]) -> dict[str, commit
     return {c.commit_id: c for c in commits}
 
 
+# similar lookup table, but not every commit has an alternative ID
+def create_alt_id_to_commit(commits: list[commit.Commit]) -> dict[str, commit.Commit]:
+    return {c.alt_id: c for c in commits if c.alt_id}
+
+
 # connect all members of s1 to s2
 def connect_all(s1: set[commit.Commit], s2: set[commit.Commit], patch_sim: tuple[bool, float]) -> None:
     for s in s1:
@@ -206,13 +209,15 @@ def connect_similar_neighbors(buckets: dict[int, InnerBuckets]) -> None:
 
 
 # add a connection to our graph for each picker and its cherries
-def connect_cherry_picks(commits: list[commit.Commit], c_id_to_c: dict[str, commit.Commit]) -> None:
+def connect_cherry_picks(commits: list[commit.Commit], c_id_to_c: dict[str, commit.Commit], alt_id_to_c: dict[str, commit.Commit]) -> None:
     for c in commits:
         if c.has_explicit_cherries:
             for cherry_id in c.explicit_cherries:
                 cherry: commit.Commit
                 if cherry_id in c_id_to_c:
                     cherry = c_id_to_c[cherry_id]
+                elif cherry_id in alt_id_to_c:
+                    cherry = alt_id_to_c[cherry_id]
                 else:
                     cherry = commit.dummy_cherry_commit(cherry_id, diff_marker)
                     # it would be cleaner to add dummies to the c_id_to_c lookup table
@@ -270,6 +275,7 @@ def analyze_repo(folder: str) -> None:
     # TODO: file_rename_scheme = get_rename_scheme(folder)
     commits: list[commit.Commit] = parse_git_output(folder)
     commit_id_to_commit: dict[str, commit.Commit] = create_commit_id_to_commit(commits)
+    alt_id_to_commit: dict[str, commit.Commit] = create_alt_id_to_commit(commits)
 
     # remove non-parseable commits
     parseable_commits: list[commit.Commit] = [c for c in commits if c.parseable]
@@ -284,7 +290,7 @@ def analyze_repo(folder: str) -> None:
     buckets = {**buckets, **non_parseable_buckets}
 
     connect_similar_neighbors(buckets)
-    connect_cherry_picks(commits, commit_id_to_commit)
+    connect_cherry_picks(commits, commit_id_to_commit, alt_id_to_commit)
     if add_complete_parent_relation:
         connect_parents(commits, commit_id_to_commit)
     else:
@@ -295,17 +301,6 @@ def analyze_repo(folder: str) -> None:
     # TODO: prune tree: weakest outgoing (non-explicit) edges
     # TODO: prune tree: remove transitive edges pointing to same sink
     how_many_connections_are_known(commits, sh_folder)
-    # TODO: for those without known connection: look within commit messages for words of length 40 (see git hash), print those out
-    # goal: find all other reference systems, people use
-    # import re
-    # git_hash40 = r"[a-fA-F0-9]{40}"
-    # for c in final_commits:
-    #     for n in c.neighbor_connections:
-    #         if n.claimed_cherry_connection:
-    #             continue
-    #         nn = n.neighbor
-    #         if re.search(git_hash40, c.commit_message) or re.search(git_hash40, nn.commit_message):
-    #             print(c.commit_id, "\n", c.commit_message, "\n\n\n", nn.commit_id, "\n", nn.commit_message, "\n\n\n")
     save_graph(commits, sh_folder)
     pass
     job_end_time: float = time.time()
@@ -323,5 +318,5 @@ if __name__ == '__main__':
         end_time: float = time.time()
         print(f"Execution time: {end_time - start_time:.1f} seconds")
     else:
-        subfolder: str = repo_folder + "FFmpeg"
+        subfolder: str = repo_folder + "intellij-community"
         analyze_repo(subfolder)

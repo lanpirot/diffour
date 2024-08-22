@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="bug fixed: set.add returns None, set.union returns new set ....">
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="getting branch ids">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/commit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/find_cherries.py" afterDir="false" />
@@ -77,7 +77,7 @@
     "Python tests.Python tests for test_commit.Test.test_setup.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_sim_hash_sum_to_bit_mask.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_sim_hash_weighted.executor": "Run",
-    "Python.find_cherries.executor": "Run",
+    "Python.find_cherries.executor": "Debug",
     "Python.main.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "main",
@@ -543,7 +543,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724263547699</updated>
     </task>
-    <option name="localTasksCounter" value="41" />
+    <task id="LOCAL-00041" summary="getting branch ids">
+      <option name="closed" value="true" />
+      <created>1724348653379</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1724348653379</updated>
+    </task>
+    <option name="localTasksCounter" value="42" />
     <servers />
   </component>
   <component name="Vcs.Log.History.Properties">
@@ -569,7 +577,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="renamed stuff a bit" />
     <MESSAGE value="tests work again" />
     <MESSAGE value="starting combination of similarity connections to one edge type" />
     <MESSAGE value="added type hints" />
@@ -594,7 +601,8 @@
     <MESSAGE value="somehow stuff slowed down immensely" />
     <MESSAGE value="neighbor relations a bit more efficient" />
     <MESSAGE value="bug fixed: set.add returns None, set.union returns new set ...." />
-    <option name="LAST_COMMIT_MESSAGE" value="bug fixed: set.add returns None, set.union returns new set ...." />
+    <MESSAGE value="getting branch ids" />
+    <option name="LAST_COMMIT_MESSAGE" value="getting branch ids" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -610,14 +618,14 @@
           <option name="timeStamp" value="264" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/commit.py</url>
-          <line>185</line>
-          <option name="timeStamp" value="269" />
+          <url>file://$PROJECT_DIR$/src/find_cherries.py</url>
+          <line>304</line>
+          <option name="timeStamp" value="298" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/find_cherries.py</url>
-          <line>309</line>
-          <option name="timeStamp" value="287" />
+          <url>file://$PROJECT_DIR$/src/commit.py</url>
+          <line>190</line>
+          <option name="timeStamp" value="302" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -631,6 +639,7 @@
     <watches-manager>
       <configuration name="PythonConfigurationType">
         <watch expression="final_commits" />
+        <watch expression="c.neighbor_connections" />
       </configuration>
     </watches-manager>
   </component>
