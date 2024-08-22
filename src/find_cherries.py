@@ -23,7 +23,7 @@ from joblib import Parallel, delayed
 #           - highly_similar_commits (directed, weight1: bit_similarity, weight2: Levenshtein_similarity)
 
 full_sample: bool = True  # a complete run, or only a test run with a small sample size?
-add_complete_parent_relation: bool = False  # store complete git graph (by parent relation), or only parent-relation for relevant nodes?
+add_complete_parent_relation: bool = True  # store complete git graph (by parent relation), or only parent-relation for relevant nodes?
 commit_limit: int = 10 ** 3  # max number of commits of a repository, we sample
 max_bucket_overspill = 1
 
@@ -34,8 +34,9 @@ commit_marker: str = "====xxx_next_commit_xxx===="
 diff_marker: str = "####xxx_next_diff_xxx####"
 pretty_format: str = commit_marker + "%n%H%n%P%n%an%n%s%b%n" + diff_marker
 
-no_merges: str = "" if add_complete_parent_relation else " --no-merges"
-git_command: str = f"git log --all{no_merges} --date-order --pretty=format:\"{pretty_format}\" -p -U3 -n {commit_limit}"
+no_merges1: str = "" if add_complete_parent_relation else " --no-merges"
+no_merges2: str = " -m" if add_complete_parent_relation else ""
+git_command: str = f"git log --all{no_merges1} --date-order --pretty=format:\"{pretty_format}\" -p{no_merges2} -U3 -n {commit_limit}"
 
 
 # prepare each git repo, and .gitattributes file
@@ -267,12 +268,18 @@ def save_graph(commits: list[commit.Commit], project_name: str) -> None:
         file.write(commits_to_csv(commits))
 
 
+def remove_duplicates(commits: list[commit.Commit]) -> list[commit.Commit]:
+    seen = {}
+    return [seen.setdefault(c.commit_id, c) for c in commits if c.commit_id not in seen]
+
+
 # main loop
 def analyze_repo(folder: str) -> None:
     job_start_time: float = time.time()
     sh_folder: str = folder.split("/")[-1]
     print(f"Working on {sh_folder} ...")
     commits: list[commit.Commit] = parse_git_output(folder)
+    commits = remove_duplicates(commits)
     commit_id_to_commit: dict[str, commit.Commit] = create_commit_id_to_commit(commits)
     alt_id_to_commit: dict[str, commit.Commit] = create_alt_id_to_commit(commits)
 
@@ -290,6 +297,8 @@ def analyze_repo(folder: str) -> None:
 
     connect_similar_neighbors(buckets)
     connect_cherry_picks(commits, commit_id_to_commit, alt_id_to_commit)
+    # TODO: prune tree: weakest outgoing (non-explicit) edges
+    # TODO: prune tree: remove transitive edges pointing to same sink
     if add_complete_parent_relation:
         connect_parents(commits, commit_id_to_commit)
     else:
@@ -297,8 +306,6 @@ def analyze_repo(folder: str) -> None:
         f_commit_id_to_commit: dict[str, commit.Commit] = create_commit_id_to_commit(final_commits)
         connect_parents(final_commits, f_commit_id_to_commit)
 
-    # TODO: prune tree: weakest outgoing (non-explicit) edges
-    # TODO: prune tree: remove transitive edges pointing to same sink
     how_many_connections_are_known(commits, sh_folder)
     save_graph(commits, sh_folder)
     pass
@@ -317,5 +324,5 @@ if __name__ == '__main__':
         end_time: float = time.time()
         print(f"Execution time: {end_time - start_time:.1f} seconds")
     else:
-        subfolder: str = repo_folder + "intellij-community"
+        subfolder: str = repo_folder + "pydriller"
         analyze_repo(subfolder)

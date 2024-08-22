@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="getting branch ids">
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="removed TODO">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/commit.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/find_cherries.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/test_commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_commit.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,7 +49,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Python tests.Python tests for test_commit.Test.executor": "Debug",
+    "Python tests.Python tests for test_commit.Test.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_add_neighbor.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_claims_cherry_pick.executor": "Run",
     "Python tests.Python tests for test_commit.Test.test_clean_patch_string.executor": "Run",
@@ -551,7 +550,23 @@
       <option name="project" value="LOCAL" />
       <updated>1724348653379</updated>
     </task>
-    <option name="localTasksCounter" value="42" />
+    <task id="LOCAL-00042" summary="more foregiving cherry-picking pattern. more general: alt-pattern instead of git-origin-pattern">
+      <option name="closed" value="true" />
+      <created>1724358194331</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1724358194331</updated>
+    </task>
+    <task id="LOCAL-00043" summary="removed TODO">
+      <option name="closed" value="true" />
+      <created>1724358273426</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1724358273426</updated>
+    </task>
+    <option name="localTasksCounter" value="44" />
     <servers />
   </component>
   <component name="Vcs.Log.History.Properties">
@@ -577,8 +592,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="tests work again" />
-    <MESSAGE value="starting combination of similarity connections to one edge type" />
     <MESSAGE value="added type hints" />
     <MESSAGE value="tests caught up with test_commit.py" />
     <MESSAGE value="fixed most pedantic PEP and other pyCharm warnings" />
@@ -602,7 +615,9 @@
     <MESSAGE value="neighbor relations a bit more efficient" />
     <MESSAGE value="bug fixed: set.add returns None, set.union returns new set ...." />
     <MESSAGE value="getting branch ids" />
-    <option name="LAST_COMMIT_MESSAGE" value="getting branch ids" />
+    <MESSAGE value="more foregiving cherry-picking pattern. more general: alt-pattern instead of git-origin-pattern" />
+    <MESSAGE value="removed TODO" />
+    <option name="LAST_COMMIT_MESSAGE" value="removed TODO" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -619,13 +634,23 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/find_cherries.py</url>
-          <line>304</line>
+          <line>310</line>
           <option name="timeStamp" value="298" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/find_cherries.py</url>
+          <line>42</line>
+          <option name="timeStamp" value="306" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/commit.py</url>
-          <line>190</line>
-          <option name="timeStamp" value="302" />
+          <line>212</line>
+          <option name="timeStamp" value="312" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/find_cherries.py</url>
+          <line>61</line>
+          <option name="timeStamp" value="313" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
