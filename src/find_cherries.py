@@ -272,7 +272,6 @@ def analyze_repo(folder: str) -> None:
     job_start_time: float = time.time()
     sh_folder: str = folder.split("/")[-1]
     print(f"Working on {sh_folder} ...")
-    # TODO: file_rename_scheme = get_rename_scheme(folder)
     commits: list[commit.Commit] = parse_git_output(folder)
     commit_id_to_commit: dict[str, commit.Commit] = create_commit_id_to_commit(commits)
     alt_id_to_commit: dict[str, commit.Commit] = create_alt_id_to_commit(commits)
