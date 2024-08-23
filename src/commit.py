@@ -82,8 +82,8 @@ def sign_hunk(hunk_str: str) -> int:
 
 
 # create a dummy cherry commit to populate the git graph with cherries we did not sample, but know of
-def dummy_cherry_commit(commit_id: str, diff_marker: str) -> 'Commit':
-    return Commit(f"{commit_id}\n\nA. Nonymous\n!!Dummy Commit!!\n{diff_marker}\n", diff_marker)
+def dummy_cherry_commit(commit_id: str, diff_marker: str, udiff:str = "") -> 'Commit':
+    return Commit(f"{commit_id}\n\nA. Nonymous\n!!Dummy Commit!!\n{diff_marker}\n{udiff}", diff_marker)
 
 
 def get_hunk_string(hunk: unidiff.Hunk) -> str:
@@ -203,10 +203,7 @@ class Commit:
             is_similar = bit_sim and patch_sim
 
             if other.other_is_in_my_cherries(self):
-                neighbor = Neighbor(neighbor=self, sim=is_similar, bit_sim=bit_sim_level, patch_sim=patch_sim_level, explicit_cherrypick=True,
-                                    is_child_of=False)
-                other.neighbor_connections.add(neighbor)
-                return
+                raise GitCommitOrderException
             else:
                 neighbor = Neighbor(neighbor=other, sim=is_similar, bit_sim=bit_sim_level, patch_sim=patch_sim_level,
                                     explicit_cherrypick=self.other_is_in_my_cherries(other), is_child_of=False)
@@ -278,3 +275,8 @@ class Neighbor:
 
     def __eq__(self, item) -> bool:
         return item == self.neighbor
+
+
+class GitCommitOrderException(Exception):
+    """Custom exception type for when the git log order is messed up. We find out about this, when a commit picked a cherry from the future."""
+    pass

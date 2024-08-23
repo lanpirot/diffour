@@ -4,13 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="fixed complete graph (merges were sometimes output twice by git)">
-      <change afterPath="$PROJECT_DIR$/src/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/__main__.py" afterDir="false" />
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="packaged for better testing">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/commit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/find_cherries.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/test_commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_commit.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -51,49 +47,49 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python tests.Python tests for test.test_commit.Test.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_add_neighbor.executor&quot;: &quot;Debug&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_claims_cherry_pick.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_clean_patch_string.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_count_same_bits.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_dummy.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_get_bit_mask.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_get_claimed_cherries.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_get_explicit_cherrypicks.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_get_hunk_string.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_get_hunk_strings.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_get_ordered_commit_pair.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_get_rev_id.executor&quot;: &quot;Debug&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_get_weighted_diff.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_has_explicit_cherrypick.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_has_rev_id.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_has_similar_text_to.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_init.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_is_child_of.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_is_similar_bitmask.executor&quot;: &quot;Debug&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_is_similar_signature.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_mingle_shingles.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_other_is_in_my_cherries.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_other_is_my_cherry.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_parse_commit_string.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_rotate_left.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_setup.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_signature_patch_set.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_sim_hash_sum_to_bit_mask.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_commit.Test.test_sim_hash_weighted.executor&quot;: &quot;Run&quot;,
-    &quot;Python.__main__.executor&quot;: &quot;Run&quot;,
-    &quot;Python.find_cherries.executor&quot;: &quot;Run&quot;,
-    &quot;Python.main.executor&quot;: &quot;Debug&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/work/diffour/test&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;Errors&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python tests.Python tests for test.test_commit.Test.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_add_neighbor.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_claims_cherry_pick.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_clean_patch_string.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_count_same_bits.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_dummy.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_get_bit_mask.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_get_claimed_cherries.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_get_explicit_cherrypicks.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_get_hunk_string.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_get_hunk_strings.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_get_ordered_commit_pair.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_get_rev_id.executor": "Debug",
+    "Python tests.Python tests for test_commit.Test.test_get_weighted_diff.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_has_explicit_cherrypick.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_has_rev_id.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_has_similar_text_to.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_init.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_is_child_of.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_is_similar_bitmask.executor": "Debug",
+    "Python tests.Python tests for test_commit.Test.test_is_similar_signature.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_mingle_shingles.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_other_is_in_my_cherries.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_other_is_my_cherry.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_parse_commit_string.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_rotate_left.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_setup.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_signature_patch_set.executor": "Debug",
+    "Python tests.Python tests for test_commit.Test.test_sim_hash_sum_to_bit_mask.executor": "Run",
+    "Python tests.Python tests for test_commit.Test.test_sim_hash_weighted.executor": "Run",
+    "Python.__main__.executor": "Run",
+    "Python.find_cherries.executor": "Run",
+    "Python.main.executor": "Debug",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "C:/work/diffour/test",
+    "settings.editor.selected.configurable": "Errors"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\work\diffour\test" />
@@ -111,7 +107,7 @@
       </set>
     </option>
   </component>
-  <component name="RunManager" selected="Python tests.Python tests for test_commit.Test.test_is_similar_signature">
+  <component name="RunManager" selected="Python tests.Python tests for test_commit.Test.test_signature_patch_set">
     <configuration name="__main__" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
@@ -171,7 +167,7 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Python tests for test_commit.Test.test_get_hunk_string" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+    <configuration name="Python tests for test_commit.Test.test_add_neighbor" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -182,7 +178,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_commit.Test.test_get_hunk_string&quot;" />
+      <option name="_new_target" value="&quot;test_commit.Test.test_add_neighbor&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
@@ -201,28 +197,28 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Python tests for test.test_commit.Test" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+    <configuration name="Python tests for test_commit.Test.test_signature_patch_set" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/.." />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/test" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test.test_commit.Test&quot;" />
+      <option name="_new_target" value="&quot;test_commit.Test.test_signature_patch_set&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python tests.Python tests for test_commit.Test.test_signature_patch_set" />
+        <item itemvalue="Python tests.Python tests for test_commit.Test.test_add_neighbor" />
+        <item itemvalue="Python tests.Python tests for test_commit.Test" />
         <item itemvalue="Python tests.Python tests for test_commit.Test.test_is_similar_signature" />
         <item itemvalue="Python.__main__" />
-        <item itemvalue="Python tests.Python tests for test.test_commit.Test" />
-        <item itemvalue="Python tests.Python tests for test_commit.Test" />
-        <item itemvalue="Python tests.Python tests for test_commit.Test.test_get_hunk_string" />
       </list>
     </recent_temporary>
   </component>
@@ -594,7 +590,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724362703911</updated>
     </task>
-    <option name="localTasksCounter" value="45" />
+    <task id="LOCAL-00045" summary="packaged for better testing">
+      <option name="closed" value="true" />
+      <created>1724415743891</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1724415743891</updated>
+    </task>
+    <option name="localTasksCounter" value="46" />
     <servers />
   </component>
   <component name="Vcs.Log.History.Properties">
@@ -620,7 +624,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="tests caught up with test_commit.py" />
     <MESSAGE value="fixed most pedantic PEP and other pyCharm warnings" />
     <MESSAGE value="small bug fix" />
     <MESSAGE value="added git preprocessing" />
@@ -645,7 +648,8 @@
     <MESSAGE value="more foregiving cherry-picking pattern. more general: alt-pattern instead of git-origin-pattern" />
     <MESSAGE value="removed TODO" />
     <MESSAGE value="fixed complete graph (merges were sometimes output twice by git)" />
-    <option name="LAST_COMMIT_MESSAGE" value="fixed complete graph (merges were sometimes output twice by git)" />
+    <MESSAGE value="packaged for better testing" />
+    <option name="LAST_COMMIT_MESSAGE" value="packaged for better testing" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

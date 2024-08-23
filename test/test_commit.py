@@ -53,7 +53,7 @@ class Test(TestCase):
             self.assertEqual((bit_sim > commit.min_bit_similarity, bit_sim), commit.is_similar_signature(bm1, bm2))
 
     def test_is_similar_signature(self):
-        self.assertEqual((False, None), commit.is_similar_signature(None,1))
+        self.assertEqual((False, None), commit.is_similar_signature(None, 1))
         self.assertEqual((False, None), commit.is_similar_signature(1, None))
         self.assertEqual((True, 1), commit.is_similar_signature(17, 17))
 
@@ -113,7 +113,9 @@ class Test(TestCase):
             self.assertEqual(commit.count_same_bits(commit.sim_hash_sum_to_signature(vector), commit.all_ones), gz)
 
     def test_get_hunk_string(self):
-        hunk = unidiff.PatchSet("diff --git a/file b/file\nindex 715d914..7b3f2d4 100644\n--- a/file\n+++ b/file\n@@ -1 +1 @@\n-line 1\n+line 1 modified")[0][0]
+        hunk = \
+        unidiff.PatchSet("diff --git a/file b/file\nindex 715d914..7b3f2d4 100644\n--- a/file\n+++ b/file\n@@ -1 +1 @@\n-line 1\n+line 1 modified")[
+            0][0]
         self.assertEqual('-line 1\n+line 1 modified', commit.get_hunk_string(hunk))
 
     def test_init(self):
@@ -306,7 +308,7 @@ class Test(TestCase):
         neighbor.parseable = True
         neighbor.commit_lsh_signature = 3
         neighbor.patch_string = self.dummy_diff
-        dummy.add_neighbor(neighbor, (False, 0))
+        dummy.add_neighbor(neighbor)
         neighbors.add(commit.Neighbor(neighbor=neighbor, sim=True, bit_sim=63 / 64, patch_sim=1.0, explicit_cherrypick=False, is_child_of=False))
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
@@ -314,10 +316,17 @@ class Test(TestCase):
         dummy.add_neighbor(neighbor, (False, 0))
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
+        # add same neighbor who is now a parent
+        neighbor = commit.dummy_cherry_commit("neighbor", "marker")
+        dummy.parent_ids = neighbor.commit_id
+        dummy.add_neighbor(neighbor, (False, 0))
+        neighbors.add(commit.Neighbor(neighbor=neighbor, sim=True, bit_sim=63 / 64, patch_sim=1.0, explicit_cherrypick=False, is_child_of=True))
+        self.assertEqual(neighbors, dummy.neighbor_connections)
+
         # add another neighbor, it should be added again
         other_neighbor = commit.dummy_cherry_commit("other neighbor", "marker")
         dummy.explicit_cherries = [other_neighbor.commit_id]
-        dummy.add_neighbor(other_neighbor, (False, 0))
+        dummy.add_neighbor(other_neighbor)
         neighbors.add(commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=0, patch_sim=0, explicit_cherrypick=True, is_child_of=False))
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
@@ -327,6 +336,10 @@ class Test(TestCase):
         neighbors.add(commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=0, patch_sim=0, explicit_cherrypick=True, is_child_of=False))
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
+        neighbor = commit.dummy_cherry_commit("picker", "marker")
+        neighbor.explicit_cherries = [dummy.commit_id]
+        self.assertRaises(commit.GitCommitOrderException, dummy.add_neighbor, neighbor)
+
     def test_is_child_of(self):
         child = commit.dummy_cherry_commit("child", "marker")
         child.parent_ids = ["parent"]
@@ -335,3 +348,8 @@ class Test(TestCase):
         self.assertFalse(child.is_child_of(child))
         self.assertFalse(parent.is_child_of(parent))
         self.assertTrue(child.is_child_of(parent))
+
+    def test_signature_patch_set(self):
+        dummy = commit.dummy_cherry_commit("commit", "marker", udiff="diff --git a/image.png b/image.png\nindex 83db48f..f735c21 100644\nBinary files a/image.png and b/image.png differ")
+        self.assertTrue(len(dummy.patch_set) == 1)
+        self.assertTrue(all(0 < p < 2 ** commit.bit_mask_length for p in dummy.patch_set))
