@@ -1,8 +1,8 @@
 # tests/test_find_cherries.py
-
-from unittest import TestCase
+import os.path
+from unittest import TestCase, mock
 import time
-
+import importlib
 from src import find_cherries
 
 
@@ -15,12 +15,15 @@ def redo_command_string(add_complete_parent_relation: bool) -> None:
 
 class Test(TestCase):
     def setUp(self):
+        self.repo_folder = "../data/cherry_repos/"
+        if not os.path.isdir(self.repo_folder):
+            self.repo_folder = "../" + self.repo_folder
         pass
 
     def test_analyze_repo(self):
         redo_command_string(add_complete_parent_relation=False)
         start_time = time.time()
-        commits = find_cherries.analyze_repo("../data/cherry_repos/pydriller")
+        commits = find_cherries.analyze_repo(self.repo_folder + "pydriller", 1000)
         end_time = time.time()
         self.assertTrue(end_time - start_time < 5)
         self.assertEqual(745, len(commits))
@@ -31,7 +34,7 @@ class Test(TestCase):
 
         redo_command_string(add_complete_parent_relation=True)
         start_time = time.time()
-        commits = find_cherries.analyze_repo("../data/cherry_repos/pydriller")
+        commits = find_cherries.analyze_repo(self.repo_folder + "pydriller", 1000)
         end_time = time.time()
         self.assertTrue(end_time - start_time < 5)
         self.assertEqual(874, len(commits))
@@ -42,7 +45,7 @@ class Test(TestCase):
 
         redo_command_string(add_complete_parent_relation=False)
         start_time = time.time()
-        commits = find_cherries.analyze_repo("../data/cherry_repos/FFmpeg")
+        commits = find_cherries.analyze_repo(self.repo_folder + "FFmpeg", 1000)
         end_time = time.time()
         self.assertTrue(end_time - start_time < 5)
         self.assertEqual(1000, len(commits))
@@ -53,7 +56,7 @@ class Test(TestCase):
 
         redo_command_string(add_complete_parent_relation=True)
         start_time = time.time()
-        commits = find_cherries.analyze_repo("../data/cherry_repos/FFmpeg")
+        commits = find_cherries.analyze_repo(self.repo_folder + "FFmpeg", 1000)
         end_time = time.time()
         self.assertTrue(end_time - start_time < 5)
         self.assertEqual(1000, len(commits))
@@ -62,12 +65,19 @@ class Test(TestCase):
         self.assertEqual(sum([len(c.explicit_cherries) for c in commits]),
                          sum([len([n for n in c.neighbor_connections if n.explicit_cherrypick]) for c in commits]))
 
-        # find_cherries.commit_limit = 10 ** 7
-        # redo_command_string(add_complete_parent_relation=False)
-        # start_time = time.time()
-        # commits = find_cherries.analyze_repo("../../data/cherry_repos/FFmpeg")
-        # end_time = time.time()
-        # self.assertTrue(end_time - start_time < 5)
-        # self.assertEqual(1000, len(commits))
-        # self.assertEqual(991, sum([len([n for n in c.neighbor_connections if n.is_child_of]) for c in commits]))
-        # self.assertEqual(896, sum([len([n for n in c.neighbor_connections if not n.is_child_of and not n.explicit_cherrypick]) for c in commits]))
+    def test_main(self):
+        find_cherries.commit_limit = 10
+        redo_command_string(add_complete_parent_relation=False)
+        find_cherries.repo_folder = self.repo_folder
+        find_cherries.full_sample = False
+        start_time = time.time()
+        find_cherries.main()
+        end_time = time.time()
+        self.assertTrue(1 < end_time - start_time < 10)
+
+        find_cherries.full_sample = True
+        redo_command_string(add_complete_parent_relation=False)
+        start_time = time.time()
+        find_cherries.main()
+        end_time = time.time()
+        self.assertTrue(1 < end_time - start_time < 30)

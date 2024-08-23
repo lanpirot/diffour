@@ -24,9 +24,9 @@ from joblib import Parallel, delayed
 #           - git_child_and_parent (directed)
 #           - highly_similar_commits (directed, weight1: bit_similarity, weight2: Levenshtein_similarity)
 
-full_sample: bool = True  # a complete run, or only a test run with a small sample size?
-add_complete_parent_relation: bool = True  # store complete git graph (by parent relation), or only parent-relation for relevant nodes?
-commit_limit: int = 10 ** 3  # max number of commits of a repository, we sample
+full_sample: bool = False  # a complete run, or only a tests run with a small sample size?
+add_complete_parent_relation: bool = False  # store complete git graph (by parent relation), or only parent-relation for relevant nodes?
+commit_limit: int = 10 ** 4  # max number of commits of a repository, we sample
 max_bucket_overspill = 1
 
 repo_folder: str = "../data/cherry_repos/"
@@ -277,7 +277,11 @@ def remove_duplicate_commits(commits: list[commit.Commit]) -> list[commit.Commit
 
 
 # main loop
-def analyze_repo(folder: str) -> list[commit.Commit]:
+def analyze_repo(folder: str, outer_commit_limit: int = commit_limit) -> list[commit.Commit]:
+    global commit_limit, git_command
+    commit_limit = outer_commit_limit
+    git_command = " ".join([c for c in git_command.split(" ")][:-1] + [str(commit_limit)])
+
     job_start_time: float = time.time()
     sh_folder: str = folder.split("/")[-1]
     print(f"Working on {sh_folder} ...")
@@ -317,16 +321,20 @@ def analyze_repo(folder: str) -> list[commit.Commit]:
     return commits
 
 
-if __name__ == '__main__':
+def main() -> None:
     gc.collect()
     subfolders: list[str] = os.walk(repo_folder).__next__()[1]
     subfolders: list[str] = [repo_folder + folder for folder in subfolders]
 
     if full_sample:
         start_time: float = time.time()
-        Parallel(n_jobs=-1)(delayed(analyze_repo)(repo) for repo in subfolders)
+        Parallel(n_jobs=-1)(delayed(analyze_repo)(repo, commit_limit) for repo in subfolders)
         end_time: float = time.time()
         print(f"Execution time: {end_time - start_time:.1f} seconds")
     else:
-        subfolder: str = repo_folder + "pydriller"
-        analyze_repo(subfolder)
+        subfolder: str = repo_folder + "FFmpeg"
+        analyze_repo(subfolder, commit_limit)
+
+
+if __name__ == '__main__':
+    main()

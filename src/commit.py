@@ -82,7 +82,7 @@ def sign_hunk(hunk_str: str) -> int:
 
 
 # create a dummy cherry commit to populate the git graph with cherries we did not sample, but know of
-def dummy_cherry_commit(commit_id: str, diff_marker: str, udiff:str = "") -> 'Commit':
+def dummy_cherry_commit(commit_id: str, diff_marker: str, udiff: str = "") -> 'Commit':
     return Commit(f"{commit_id}\n\nA. Nonymous\n!!Dummy Commit!!\n{diff_marker}\n{udiff}", diff_marker)
 
 
@@ -131,7 +131,7 @@ def parse_commit_str(commit_str: str, diff_marker: str):
     try:
         patch_set: unidiff.PatchSet = unidiff.PatchSet(commit_diff)
         parseable = True
-        if len(patch_set) == 0 and len(parent_ids) <= 1:
+        if len(patch_set) == 0 and len(parent_ids) == 1:
             raise unidiff.UnidiffParseError
     except unidiff.UnidiffParseError:
         parseable = False
@@ -212,7 +212,7 @@ class Commit:
     def is_child_of(self, other_commit: 'Commit') -> bool:
         return other_commit.commit_id in self.parent_ids
 
-    # test if commit message features a "GitOrigin-RevId" string
+    # tests if commit message features a "GitOrigin-RevId" string
     def has_alt_id(self) -> bool:
         return re.search(git_alt_id_pattern, self.commit_message) is not None
 
