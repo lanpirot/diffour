@@ -4,12 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="configured tests a bit better">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/commit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/find_cherries.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_commit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_find_cherries.py" afterDir="false" />
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="better testing">
+      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -637,7 +633,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724428964110</updated>
     </task>
-    <option name="localTasksCounter" value="49" />
+    <task id="LOCAL-00049" summary="better testing">
+      <option name="closed" value="true" />
+      <created>1724436910039</created>
+      <option name="number" value="00049" />
+      <option name="presentableId" value="LOCAL-00049" />
+      <option name="project" value="LOCAL" />
+      <updated>1724436910039</updated>
+    </task>
+    <option name="localTasksCounter" value="50" />
     <servers />
   </component>
   <component name="Vcs.Log.History.Properties">
@@ -663,7 +667,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="bit better parsing, tests caught up again" />
     <MESSAGE value="before online gitoutput-stream processing" />
     <MESSAGE value="after online git-outputstream processing!" />
     <MESSAGE value="added type hints everywhere" />
@@ -688,7 +691,8 @@
     <MESSAGE value="tests caught up, again" />
     <MESSAGE value="added tests for find_cherries" />
     <MESSAGE value="configured tests a bit better" />
-    <option name="LAST_COMMIT_MESSAGE" value="configured tests a bit better" />
+    <MESSAGE value="better testing" />
+    <option name="LAST_COMMIT_MESSAGE" value="better testing" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

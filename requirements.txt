@@ -1,0 +1,4 @@
+unidiff~=0.7.5
+numpy~=1.26.4
+mmh3~=3.0.0
+joblib~=1.4.2
