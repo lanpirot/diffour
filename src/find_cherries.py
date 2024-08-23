@@ -5,7 +5,7 @@ import gc
 import subprocess
 import numpy as np
 import re
-import commit
+from src import commit
 import time
 from joblib import Parallel, delayed
 
@@ -277,7 +277,7 @@ def remove_duplicate_commits(commits: list[commit.Commit]) -> list[commit.Commit
 
 
 # main loop
-def analyze_repo(folder: str) -> None:
+def analyze_repo(folder: str) -> list[commit.Commit]:
     job_start_time: float = time.time()
     sh_folder: str = folder.split("/")[-1]
     print(f"Working on {sh_folder} ...")
@@ -314,6 +314,7 @@ def analyze_repo(folder: str) -> None:
     pass
     job_end_time: float = time.time()
     print(f"{sh_folder}: Execution time: {job_end_time - job_start_time:.1f} seconds")
+    return commits
 
 
 if __name__ == '__main__':

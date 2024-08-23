@@ -3,6 +3,8 @@
 import unittest
 
 
+# coverage run -m test; coverage html; start .\htmlcov\index.html
+
 def main():
     # Discover and load all test cases from the 'tests' directory
     loader = unittest.TestLoader()

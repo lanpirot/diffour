@@ -1,6 +1,5 @@
 # tests/test_commit.py
 
-import unittest
 from unittest import TestCase
 import numpy as np
 import unidiff
