@@ -1,3 +1,5 @@
+# src/commit.py
+
 from typing import Optional
 
 import unidiff
@@ -84,7 +86,7 @@ def dummy_cherry_commit(commit_id: str, diff_marker: str) -> 'Commit':
     return Commit(f"{commit_id}\n\nA. Nonymous\n!!Dummy Commit!!\n{diff_marker}\n", diff_marker)
 
 
-def get_hunk_string(hunk: unidiff.patch) -> str:
+def get_hunk_string(hunk: unidiff.Hunk) -> str:
     # ret = ",".join([str(i) for i in [hunk.source_start, hunk.source_length, hunk.target_start, hunk.target_length]]) + "\n"
     ret = ""
     for hunk_line in hunk:
@@ -129,7 +131,7 @@ def parse_commit_str(commit_str: str, diff_marker: str):
     try:
         patch_set: unidiff.PatchSet = unidiff.PatchSet(commit_diff)
         parseable = True
-        if len(patch_set) == 0 and len(parent_ids) == 1:
+        if len(patch_set) == 0 and len(parent_ids) <= 1:
             raise unidiff.UnidiffParseError
     except unidiff.UnidiffParseError:
         parseable = False

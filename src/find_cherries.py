@@ -1,3 +1,5 @@
+# src/find_cherries.py
+
 import os
 import gc
 import subprocess
@@ -268,7 +270,8 @@ def save_graph(commits: list[commit.Commit], project_name: str) -> None:
         file.write(commits_to_csv(commits))
 
 
-def remove_duplicates(commits: list[commit.Commit]) -> list[commit.Commit]:
+# sometimes git outputs merges more than once ...
+def remove_duplicate_commits(commits: list[commit.Commit]) -> list[commit.Commit]:
     seen = {}
     return [seen.setdefault(c.commit_id, c) for c in commits if c.commit_id not in seen]
 
@@ -279,7 +282,7 @@ def analyze_repo(folder: str) -> None:
     sh_folder: str = folder.split("/")[-1]
     print(f"Working on {sh_folder} ...")
     commits: list[commit.Commit] = parse_git_output(folder)
-    commits = remove_duplicates(commits)
+    commits = remove_duplicate_commits(commits)
     commit_id_to_commit: dict[str, commit.Commit] = create_commit_id_to_commit(commits)
     alt_id_to_commit: dict[str, commit.Commit] = create_alt_id_to_commit(commits)
 
