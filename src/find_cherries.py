@@ -44,7 +44,11 @@ git_command: str = f"git log --all{no_merges1} --date-order --pretty=format:\"{p
 # prepare each git repo, and .gitattributes file
 def init_git() -> None:
     subprocess.run("git stash clear", shell=True)
-    with open(".gitattributes", "r+") as file:
+    ga_file = ".gitattributes"
+    if not os.path.exists(ga_file):
+        with open(ga_file, 'w') as _:
+            pass
+    with open(ga_file, "r+") as file:
         text: str = file.read()
         if not re.search(r"\*\.pdf\s*binary", text):
             text += "*.pdf binary\n"
@@ -113,10 +117,7 @@ def get_any(s: set):
 class InnerBuckets:
     def __init__(self, hsh_to_members: dict[int, set[commit.Commit]] = None):
         self.hsh_to_members: dict[int, set[commit.Commit]]
-        if hsh_to_members:
-            self.hsh_to_members = hsh_to_members
-        else:
-            self.hsh_to_members = dict()
+        self.hsh_to_members = hsh_to_members
 
     def __getitem__(self, index):
         return self.hsh_to_members[index]
@@ -333,7 +334,7 @@ def main() -> None:
         print(f"Execution time: {end_time - start_time:.1f} seconds")
     else:
         subfolder: str = repo_folder + "FFmpeg"
-        analyze_repo(subfolder, commit_limit)
+        analyze_repo(subfolder)
 
 
 if __name__ == '__main__':

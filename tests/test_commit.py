@@ -7,6 +7,8 @@ import unidiff
 from src import commit
 import random
 
+from src.find_cherries import diff_marker
+
 random.seed(42)
 
 
@@ -108,8 +110,7 @@ class Test(TestCase):
 
     def test_get_hunk_string(self):
         hunk = \
-        unidiff.PatchSet("diff --git a/file b/file\nindex 715d914..7b3f2d4 100644\n--- a/file\n+++ b/file\n@@ -1 +1 @@\n-line 1\n+line 1 modified")[
-            0][0]
+        unidiff.PatchSet("diff --git a/file b/file\nindex 715d914..7b3f2d4 100644\n--- a/file\n+++ b/file\n@@ -1 +1 @@\n-line 1\n+line 1 modified")[0][0]
         self.assertEqual('-line 1\n+line 1 modified', commit.get_hunk_string(hunk))
 
     def test_init(self):
@@ -256,7 +257,7 @@ class Test(TestCase):
         dummy_info = [("commit_id" + str(i), "diff_marker" + str(i)) for i in range(10)]
         for i in range(10):
             (cid, dm) = dummy_info[i]
-            dummy = commit.dummy_cherry_commit(cid, dm)
+            dummy = commit.dummy_cherry_commit(cid)
 
             self.assertEqual(cid, dummy.commit_id)
             self.assertEqual("A. Nonymous", dummy.author)
@@ -264,9 +265,12 @@ class Test(TestCase):
             self.assertEqual(True, dummy.parseable)
             self.assertEqual(True, dummy.is_root)
 
+            dummy = commit.dummy_cherry_commit(cid, "parent_id")
+            self.assertEqual(False, dummy.parseable)
+
     def test_has_similar_text_to(self):
-        dummy_with = commit.dummy_cherry_commit("id", "marker")
-        dummy_without = commit.dummy_cherry_commit("id", "marker")
+        dummy_with = commit.dummy_cherry_commit("id")
+        dummy_without = commit.dummy_cherry_commit("id")
         self.assertEqual((False, None), dummy_with.is_similar_patch_to(dummy_without))
 
         dummy_diff_with = "diff --git a/sys/kern/imgact_elf.c b/sys/kern/imgact_elf.c\nindex 28ffdd03dd6d..494456ceeeae 100644\n--- a/sys/kern/imgact_elf.c\n+++ b/sys/kern/imgact_elf.c\n@@ -617,9 +617,9 @@ __elfN(map_insert)(const struct image_params *imgp, vm_map_t map,\n 	return (KERN_SUCCESS);\n }\n \n-static int __elfN(load_section)(const struct image_params *imgp,\n-    vm_ooffset_t offset, caddr_t vmaddr, size_t memsz, size_t filsz,\n-    vm_prot_t prot)\n+static int\n+__elfN(load_section)(const struct image_params *imgp, vm_ooffset_t offset,\n+    caddr_t vmaddr, size_t memsz, size_t filsz, vm_prot_t prot)\n {\n 	struct sf_buf *sf;\n 	size_t map_len;\n"
@@ -288,7 +292,7 @@ class Test(TestCase):
         self.assertEqual((False, 0.0), dummy_with.is_similar_patch_to(dummy_without))
 
     def test_add_neighbor(self):
-        dummy = commit.dummy_cherry_commit("dummy", "marker")
+        dummy = commit.dummy_cherry_commit("dummy")
         dummy.parseable = True
         dummy.commit_lsh_signature = 1
         dummy.patch_string = self.dummy_diff
@@ -298,7 +302,7 @@ class Test(TestCase):
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
         # add some neighbor
-        neighbor = commit.dummy_cherry_commit("neighbor", "marker")
+        neighbor = commit.dummy_cherry_commit("neighbor")
         neighbor.parseable = True
         neighbor.commit_lsh_signature = 3
         neighbor.patch_string = self.dummy_diff
@@ -311,39 +315,40 @@ class Test(TestCase):
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
         # add same neighbor who is now a parent
-        neighbor = commit.dummy_cherry_commit("neighbor", "marker")
+        neighbor = commit.dummy_cherry_commit("neighbor")
         dummy.parent_ids = neighbor.commit_id
         dummy.add_neighbor(neighbor, (False, 0))
         neighbors.add(commit.Neighbor(neighbor=neighbor, sim=True, bit_sim=63 / 64, patch_sim=1.0, explicit_cherrypick=False, is_child_of=True))
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
         # add another neighbor, it should be added again
-        other_neighbor = commit.dummy_cherry_commit("other neighbor", "marker")
+        other_neighbor = commit.dummy_cherry_commit("other neighbor")
         dummy.explicit_cherries = [other_neighbor.commit_id]
         dummy.add_neighbor(other_neighbor)
         neighbors.add(commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=0, patch_sim=0, explicit_cherrypick=True, is_child_of=False))
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
-        other_neighbor = commit.dummy_cherry_commit("last neighbor", "marker")
+        other_neighbor = commit.dummy_cherry_commit("last neighbor")
         dummy.explicit_cherries = [other_neighbor.commit_id]
         dummy.add_neighbor(other_neighbor, (False, 0))
         neighbors.add(commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=0, patch_sim=0, explicit_cherrypick=True, is_child_of=False))
         self.assertEqual(neighbors, dummy.neighbor_connections)
 
-        neighbor = commit.dummy_cherry_commit("picker", "marker")
+        neighbor = commit.dummy_cherry_commit("picker")
         neighbor.explicit_cherries = [dummy.commit_id]
         self.assertRaises(commit.GitCommitOrderException, dummy.add_neighbor, neighbor)
 
     def test_is_child_of(self):
-        child = commit.dummy_cherry_commit("child", "marker")
+        child = commit.dummy_cherry_commit("child")
         child.parent_ids = ["parent"]
-        parent = commit.dummy_cherry_commit("parent", "marker")
+        parent = commit.dummy_cherry_commit("parent")
 
         self.assertFalse(child.is_child_of(child))
         self.assertFalse(parent.is_child_of(parent))
         self.assertTrue(child.is_child_of(parent))
 
     def test_signature_patch_set(self):
-        dummy = commit.dummy_cherry_commit("commit", "marker", udiff="diff --git a/image.png b/image.png\nindex 83db48f..f735c21 100644\nBinary files a/image.png and b/image.png differ")
+        dummy = commit.dummy_cherry_commit("commit",
+                                           udiff="diff --git a/image.png b/image.png\nindex 83db48f..f735c21 100644\nBinary files a/image.png and b/image.png differ")
         self.assertTrue(len(dummy.patch_set) == 1)
         self.assertTrue(all(0 < p < 2 ** commit.bit_mask_length for p in dummy.patch_set))

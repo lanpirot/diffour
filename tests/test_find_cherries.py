@@ -1,8 +1,8 @@
 # tests/test_find_cherries.py
 import os.path
-from unittest import TestCase, mock
+import shutil
+from unittest import TestCase
 import time
-import importlib
 from src import find_cherries
 
 
@@ -75,9 +75,25 @@ class Test(TestCase):
         end_time = time.time()
         self.assertTrue(1 < end_time - start_time < 10)
 
+        find_cherries.commit_limit = 1000
         find_cherries.full_sample = True
         redo_command_string(add_complete_parent_relation=False)
         start_time = time.time()
         find_cherries.main()
         end_time = time.time()
-        self.assertTrue(1 < end_time - start_time < 30)
+        self.assertTrue(10 < end_time - start_time < 60)
+
+    def test_init_git(self):
+        tmp_dir = "my_temp_dir"
+        os.makedirs(tmp_dir, exist_ok=True)
+        os.chdir(tmp_dir)
+        find_cherries.init_git()
+        gitattributes_file = ".gitattributes"
+        self.assertTrue(os.path.isfile(gitattributes_file))
+        with open(gitattributes_file) as gf:
+            content = gf.read()
+            self.assertTrue("* text=auto" in content)
+            self.assertTrue("*.pdf binary" in content)
+        os.chdir("..")
+        shutil.rmtree(tmp_dir)
+        # TODO: organize into unit tests and integration tests

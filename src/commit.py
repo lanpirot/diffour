@@ -82,8 +82,8 @@ def sign_hunk(hunk_str: str) -> int:
 
 
 # create a dummy cherry commit to populate the git graph with cherries we did not sample, but know of
-def dummy_cherry_commit(commit_id: str, diff_marker: str, udiff: str = "") -> 'Commit':
-    return Commit(f"{commit_id}\n\nA. Nonymous\n!!Dummy Commit!!\n{diff_marker}\n{udiff}", diff_marker)
+def dummy_cherry_commit(commit_id: str, parent_id: str = "", diff_marker: str = "marker", udiff: str = "") -> 'Commit':
+    return Commit(f"{commit_id}\n{parent_id}\nA. Nonymous\n!!Dummy Commit!!\n{diff_marker}\n{udiff}", diff_marker)
 
 
 def get_hunk_string(hunk: unidiff.Hunk) -> str:
