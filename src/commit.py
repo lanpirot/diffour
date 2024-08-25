@@ -74,7 +74,8 @@ def sign_commit_rough(patch_set: set[int]) -> int:
 
 
 def sign_commit_fine(patch_str: str) -> int:
-    return mmh3.hash64('\n'.join(line for line in patch_str.splitlines() if not line.startswith("index ")))[0]
+    cut_out_index_lines = '\n'.join(line for line in patch_str.splitlines() if not line.startswith("index "))
+    return mmh3.hash64(cut_out_index_lines)[0]
 
 
 def sign_hunk(hunk_str: str) -> int:
@@ -182,7 +183,7 @@ class Commit:
         return similarity >= min_patch_similarity, similarity
 
     def already_neighbors(self, other):
-        return other in [n.neighbor for n in self.neighbor_connections] or self in [n.neighbor for n in self.neighbor_connections] or self == other
+        return other in [n.neighbor for n in self.neighbor_connections] or self in [n.neighbor for n in other.neighbor_connections] or self == other
 
     # add a neighbor edge for our neighbor graph
     # we expect edges of type: strong similarity (bitwise, patch_sim), explicit cherrypick, git-parent-relation
@@ -205,8 +206,11 @@ class Commit:
             if other.other_is_in_my_cherries(self):
                 raise GitCommitOrderException
             else:
-                neighbor = Neighbor(neighbor=other, sim=is_similar, bit_sim=bit_sim_level, patch_sim=patch_sim_level,
-                                    explicit_cherrypick=self.other_is_in_my_cherries(other), is_child_of=False)
+                if is_similar or self.other_is_in_my_cherries(other):
+                    neighbor = Neighbor(neighbor=other, sim=is_similar, bit_sim=bit_sim_level, patch_sim=patch_sim_level,
+                                        explicit_cherrypick=self.other_is_in_my_cherries(other), is_child_of=False)
+                else:
+                    return
         self.neighbor_connections.add(neighbor)
 
     def is_child_of(self, other_commit: 'Commit') -> bool:

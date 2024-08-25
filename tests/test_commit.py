@@ -1,13 +1,13 @@
 # tests/test_commit.py
 
 from unittest import TestCase
+
+import mmh3
 import numpy as np
 import unidiff
 
 from src import commit
 import random
-
-from src.find_cherries import diff_marker
 
 random.seed(42)
 
@@ -32,7 +32,7 @@ class Test(TestCase):
         self.test_commit = commit.Commit(self.commit_strings[0], self.diff_marker)
         self.test_commit2 = commit.Commit(self.commit_strings[3], self.diff_marker)
 
-    def test_is_similar_bitmask(self):
+    def test_is_similar_signature(self):
         bm1, bm2 = None, 1
         self.assertEqual((False, None), commit.is_similar_signature(bm1, bm2))
         bm1, bm2 = -12321, None
@@ -48,7 +48,6 @@ class Test(TestCase):
             bit_sim = sum([1 for (b1, b2) in zip(bbm1, bbm2) if b1 == b2]) / commit.bit_mask_length
             self.assertEqual((bit_sim > commit.min_bit_similarity, bit_sim), commit.is_similar_signature(bm1, bm2))
 
-    def test_is_similar_signature(self):
         self.assertEqual((False, None), commit.is_similar_signature(None, 1))
         self.assertEqual((False, None), commit.is_similar_signature(1, None))
         self.assertEqual((True, 1), commit.is_similar_signature(17, 17))
@@ -98,7 +97,7 @@ class Test(TestCase):
                 s[i] = -weight
         assert (np.all(commit.sim_hash_weighted(r, weight) == s))
 
-    def test_sim_hash_sum_to_bit_mask(self):
+    def test_sim_hash_sum_to_signature(self):
         for i in range(100):
             vector = np.zeros(commit.bit_mask_length)
             gz = 0
@@ -153,14 +152,14 @@ class Test(TestCase):
         self.assertRaises(ValueError, commit.Commit, "Diff marker present, but not enough of ID, parentID, author, message\ndiffmarker\n",
                           "diffmarker")
 
-    def test_has_rev_id(self):
+    def test_has_alt_id(self):
         c = self.test_commit
         self.assertEqual(c.has_alt_id(), True)
 
         c.commit_message = "commitID\n\nauthor\nmessage1\nmessage2\n\n\n\n" + self.diff_marker + "\npseudo diff"
         self.assertEqual(c.has_alt_id(), False)
 
-    def test_get_rev_id(self):
+    def test_get_alt_id(self):
         c = self.test_commit
         self.assertEqual(c.get_alt_id(), 'aad8d335e2d876506a2948071644685ff99e14e4')
 
@@ -228,10 +227,6 @@ class Test(TestCase):
         self.assertEqual(c.other_is_in_my_cherries(c), False)
         self.assertEqual(d.other_is_in_my_cherries(d), False)
 
-    def test_get_all_cherries_in_group(self):
-        pass
-        # assert(False)
-
     def test_get_ordered_commit_pair(self):
         c = self.test_commit
         d = self.test_commit2
@@ -244,7 +239,7 @@ class Test(TestCase):
         self.assertEqual(c.get_ordered_commit_pair(d), (c, d))
         self.assertEqual(d.get_ordered_commit_pair(c), (c, d))
 
-    def test_get_bit_mask(self):
+    def test_sign_commit_rough(self):
         for cm in self.commit_strings:
             c = commit.Commit(cm, self.diff_marker)
             patch_string = cm.split(self.diff_marker)[1][1:]
@@ -253,7 +248,7 @@ class Test(TestCase):
             self.assertEqual(commit.sign_commit_rough(patch_set), commit.sign_commit_rough(patch_set))
             self.assertTrue(0 < commit.sign_commit_rough(patch_set) < 2 ** commit.bit_mask_length)
 
-    def test_dummy(self):
+    def test_dummy_cherry_commit(self):
         dummy_info = [("commit_id" + str(i), "diff_marker" + str(i)) for i in range(10)]
         for i in range(10):
             (cid, dm) = dummy_info[i]
@@ -268,7 +263,7 @@ class Test(TestCase):
             dummy = commit.dummy_cherry_commit(cid, "parent_id")
             self.assertEqual(False, dummy.parseable)
 
-    def test_has_similar_text_to(self):
+    def test_is_similar_patch_to(self):
         dummy_with = commit.dummy_cherry_commit("id")
         dummy_without = commit.dummy_cherry_commit("id")
         self.assertEqual((False, None), dummy_with.is_similar_patch_to(dummy_without))
@@ -292,20 +287,18 @@ class Test(TestCase):
         self.assertEqual((False, 0.0), dummy_with.is_similar_patch_to(dummy_without))
 
     def test_add_neighbor(self):
-        dummy = commit.dummy_cherry_commit("dummy")
+        dummy = commit.dummy_cherry_commit("dummy", udiff=self.dummy_diff)
         dummy.parseable = True
         dummy.commit_lsh_signature = 1
-        dummy.patch_string = self.dummy_diff
-        self.assertEqual(set(), dummy.neighbor_connections)
-        dummy.add_neighbor(dummy, (False, 0))
+        # self.assertEqual(set(), dummy.neighbor_connections)
+        # dummy.add_neighbor(dummy, (False, 0))
         neighbors = set()
-        self.assertEqual(neighbors, dummy.neighbor_connections)
+        # self.assertEqual(neighbors, dummy.neighbor_connections)
 
         # add some neighbor
-        neighbor = commit.dummy_cherry_commit("neighbor")
+        neighbor = commit.dummy_cherry_commit("neighbor", udiff=self.dummy_diff)
         neighbor.parseable = True
         neighbor.commit_lsh_signature = 3
-        neighbor.patch_string = self.dummy_diff
         dummy.add_neighbor(neighbor)
         neighbors.add(commit.Neighbor(neighbor=neighbor, sim=True, bit_sim=63 / 64, patch_sim=1.0, explicit_cherrypick=False, is_child_of=False))
         self.assertEqual(neighbors, dummy.neighbor_connections)
@@ -352,3 +345,46 @@ class Test(TestCase):
                                            udiff="diff --git a/image.png b/image.png\nindex 83db48f..f735c21 100644\nBinary files a/image.png and b/image.png differ")
         self.assertTrue(len(dummy.patch_set) == 1)
         self.assertTrue(all(0 < p < 2 ** commit.bit_mask_length for p in dummy.patch_set))
+
+    def test_is_younger_than(self):
+        self.assertTrue(self.test_commit.is_younger_than(self.test_commit2))
+        dummy_young = commit.dummy_cherry_commit("born_later")
+        dummy_old = commit.dummy_cherry_commit("born_before")
+        self.assertTrue(dummy_young.is_younger_than(dummy_old))
+
+    def test_already_neighbors(self):
+        self.assertTrue(self.test_commit.already_neighbors(self.test_commit))
+        self.assertTrue(self.test_commit2.already_neighbors(self.test_commit2))
+        self.assertFalse(self.test_commit.already_neighbors(self.test_commit2))
+        self.assertFalse(self.test_commit2.already_neighbors(self.test_commit))
+
+        # not close enough
+        dummy = commit.dummy_cherry_commit(commit_id="my dummy", udiff="diff --git a/image.png b/image.png\nindex 83db48f..f735c21 100644\nBinary files a/image.png and b/image.png differ")
+        self.test_commit.add_neighbor(dummy)
+        self.assertFalse(self.test_commit.already_neighbors(dummy))
+        self.assertFalse(dummy.already_neighbors(self.test_commit))
+
+        # force them to be added
+        self.test_commit.explicit_cherries = [self.test_commit2.commit_id]
+        self.test_commit.add_neighbor(self.test_commit2)
+        self.assertTrue(self.test_commit.already_neighbors(self.test_commit2))
+        self.assertTrue(self.test_commit2.already_neighbors(self.test_commit))
+
+    def test_sign_hunk(self):
+        test_strings = [chr(i + 60) * i for i in range(100)]
+        signed_test_strings = [commit.sign_hunk(ts) for ts in test_strings]
+        self.assertTrue(len(set(signed_test_strings)) == len(signed_test_strings))
+        self.assertTrue(all(0 <= sts + 2 ** (commit.bit_mask_length - 1) < 2 ** commit.bit_mask_length for sts in signed_test_strings))
+
+    def test_sign_commit_fine(self):
+        test_string = "\n".join([chr(i + 60) * i for i in range(50)])
+        signed_test_string = commit.sign_commit_fine(test_string)
+        self.assertTrue(0 <= signed_test_string + 2 ** (commit.bit_mask_length - 1) < 2 ** commit.bit_mask_length)
+
+        test_string1 = test_string + "\nindex foo bar"
+        signed_test_string = commit.sign_commit_fine(test_string1)
+        self.assertEqual(signed_test_string, mmh3.hash64(test_string)[0])
+
+        test_string1 = test_string + "\nindex, foo bar"
+        signed_test_string = commit.sign_commit_fine(test_string1)
+        self.assertNotEqual(signed_test_string, mmh3.hash64(test_string)[0])

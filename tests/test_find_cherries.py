@@ -96,4 +96,57 @@ class Test(TestCase):
             self.assertTrue("*.pdf binary" in content)
         os.chdir("..")
         shutil.rmtree(tmp_dir)
-        # TODO: organize into unit tests and integration tests
+
+    def test_parse_git_output(self):
+        pass
+
+    def test_get_branch_dict(self):
+        pass
+
+    def test_read_in_commits_from_stdout(self):
+        pass
+
+    def test_get_any(self):
+        pass
+
+    def test_bucketize_buckets(self):
+        pass
+
+    def test_remove_singles(self):
+        pass
+
+    def test_get_candidate_groups(self):
+        pass
+
+    def test_create_commit_id_to_commit(self):
+        pass
+
+    def test_create_alt_id_to_commit(self):
+        pass
+
+    def test_test_connect_all(self):
+        pass
+
+    def test_connect_similar_neighbors(self):
+        pass
+
+    def test_connect_cherry_picks(self):
+        pass
+
+    def test_connect_parents(self):
+        pass
+
+    def test_remove_single_commits(self):
+        pass
+
+    def test_how_many_connections_are_known(self):
+        pass
+
+    def test_commits_to_csv(self):
+        pass
+
+    def test_save_graph(self):
+        pass
+
+    def test_remove_duplicate_commits(self):
+        pass

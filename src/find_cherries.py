@@ -333,8 +333,8 @@ def main() -> None:
         end_time: float = time.time()
         print(f"Execution time: {end_time - start_time:.1f} seconds")
     else:
-        subfolder: str = repo_folder + "FFmpeg"
-        analyze_repo(subfolder)
+        repo: str = repo_folder + "FFmpeg"
+        analyze_repo(repo, commit_limit)
 
 
 if __name__ == '__main__':
