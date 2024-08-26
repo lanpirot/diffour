@@ -244,7 +244,7 @@ class Test(TestCase):
             c = commit.Commit(cm, self.diff_marker)
             patch_string = cm.split(self.diff_marker)[1][1:]
             patch_set = unidiff.PatchSet(patch_string)
-            patch_set = c.signature_patch_set(patch_set)
+            patch_set = c.signature_patch_set_hunks(patch_set)
             self.assertEqual(commit.sign_commit_rough(patch_set), commit.sign_commit_rough(patch_set))
             self.assertTrue(0 < commit.sign_commit_rough(patch_set) < 2 ** commit.bit_mask_length)
 
@@ -272,18 +272,18 @@ class Test(TestCase):
         dummy_diff_without = "diff --git a/sys/kern/imgact_elf.c b/sys/kern/imgact_elf.c\n--- a/sys/kern/imgact_elf.c\n+++ b/sys/kern/imgact_elf.c\n@@ -617,9 +617,9 @@ __elfN(map_insert)(const struct image_params *imgp, vm_map_t map,\n 	return (KERN_SUCCESS);\n }\n \n-static int __elfN(load_section)(const struct image_params *imgp,\n-    vm_ooffset_t offset, caddr_t vmaddr, size_t memsz, size_t filsz,\n-    vm_prot_t prot)\n+static int\n+__elfN(load_section)(const struct image_params *imgp, vm_ooffset_t offset,\n+    caddr_t vmaddr, size_t memsz, size_t filsz, vm_prot_t prot)\n {\n 	struct sf_buf *sf;\n 	size_t map_len;\n"
         dummy_with.parseable = True
         dummy_without.parseable = True
-        dummy_with.patch_set = dummy_with.signature_patch_set(unidiff.PatchSet(dummy_diff_with))
-        dummy_without.patch_set = dummy_with.signature_patch_set(unidiff.PatchSet(dummy_diff_without))
+        dummy_with.patch_set = dummy_with.signature_patch_set_hunks(unidiff.PatchSet(dummy_diff_with))
+        dummy_without.patch_set = dummy_with.signature_patch_set_hunks(unidiff.PatchSet(dummy_diff_without))
         self.assertEqual((True, 1.0), dummy_with.is_similar_patch_to(dummy_with))
         self.assertEqual((True, 1.0), dummy_without.is_similar_patch_to(dummy_without))
         self.assertEqual((True, 1.0), dummy_with.is_similar_patch_to(dummy_without))
 
-        dummy_without.patch_set = dummy_without.signature_patch_set((unidiff.PatchSet(self.dummy_diff * 4)))
+        dummy_without.patch_set = dummy_without.signature_patch_set_hunks((unidiff.PatchSet(self.dummy_diff * 4)))
         (truthy, floaty) = dummy_with.is_similar_patch_to(dummy_without)
         self.assertEqual(False, truthy)
         self.assertTrue(0.0 <= floaty <= 1.0)
 
-        dummy_without.patch_set = dummy_without.signature_patch_set(unidiff.PatchSet(self.dummy_diff))
+        dummy_without.patch_set = dummy_without.signature_patch_set_hunks(unidiff.PatchSet(self.dummy_diff))
         self.assertEqual((False, 0.0), dummy_with.is_similar_patch_to(dummy_without))
 
     def test_add_neighbor(self):
@@ -300,32 +300,32 @@ class Test(TestCase):
         neighbor.parseable = True
         neighbor.commit_lsh_signature = 3
         dummy.add_neighbor(neighbor)
-        neighbors.add(commit.Neighbor(neighbor=neighbor, sim=True, bit_sim=63 / 64, patch_sim=1.0, explicit_cherrypick=False, is_child_of=False))
-        self.assertEqual(neighbors, dummy.neighbor_connections)
+        neighbors.add(commit.Edge(neighbor=neighbor, sim=True, bit_sim=63 / 64, patch_sim=1.0, explicit_cherrypick=False, is_child_of=False))
+        self.assertEqual(neighbors, dummy.edges)
 
         # add same neighbor: nothing should change
         dummy.add_neighbor(neighbor, (False, 0))
-        self.assertEqual(neighbors, dummy.neighbor_connections)
+        self.assertEqual(neighbors, dummy.edges)
 
         # add same neighbor who is now a parent
         neighbor = commit.dummy_cherry_commit("neighbor")
         dummy.parent_ids = neighbor.commit_id
         dummy.add_neighbor(neighbor, (False, 0))
-        neighbors.add(commit.Neighbor(neighbor=neighbor, sim=True, bit_sim=63 / 64, patch_sim=1.0, explicit_cherrypick=False, is_child_of=True))
-        self.assertEqual(neighbors, dummy.neighbor_connections)
+        neighbors.add(commit.Edge(neighbor=neighbor, sim=True, bit_sim=63 / 64, patch_sim=1.0, explicit_cherrypick=False, is_child_of=True))
+        self.assertEqual(neighbors, dummy.edges)
 
         # add another neighbor, it should be added again
         other_neighbor = commit.dummy_cherry_commit("other neighbor")
         dummy.explicit_cherries = [other_neighbor.commit_id]
         dummy.add_neighbor(other_neighbor)
-        neighbors.add(commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=0, patch_sim=0, explicit_cherrypick=True, is_child_of=False))
-        self.assertEqual(neighbors, dummy.neighbor_connections)
+        neighbors.add(commit.Edge(neighbor=other_neighbor, sim=False, bit_sim=0, patch_sim=0, explicit_cherrypick=True, is_child_of=False))
+        self.assertEqual(neighbors, dummy.edges)
 
         other_neighbor = commit.dummy_cherry_commit("last neighbor")
         dummy.explicit_cherries = [other_neighbor.commit_id]
         dummy.add_neighbor(other_neighbor, (False, 0))
-        neighbors.add(commit.Neighbor(neighbor=other_neighbor, sim=False, bit_sim=0, patch_sim=0, explicit_cherrypick=True, is_child_of=False))
-        self.assertEqual(neighbors, dummy.neighbor_connections)
+        neighbors.add(commit.Edge(neighbor=other_neighbor, sim=False, bit_sim=0, patch_sim=0, explicit_cherrypick=True, is_child_of=False))
+        self.assertEqual(neighbors, dummy.edges)
 
         neighbor = commit.dummy_cherry_commit("picker")
         neighbor.explicit_cherries = [dummy.commit_id]

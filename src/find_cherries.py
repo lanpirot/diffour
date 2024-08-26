@@ -2,7 +2,9 @@
 
 import os
 import gc
+import random
 import subprocess
+
 import numpy as np
 import re
 from src import commit
@@ -24,7 +26,7 @@ from joblib import Parallel, delayed
 #           - git_child_and_parent (directed)
 #           - highly_similar_commits (directed, weight1: bit_similarity, weight2: Levenshtein_similarity)
 
-full_sample: bool = False  # a complete run, or only a tests run with a small sample size?
+full_sample: bool = True  # a complete run, or only a tests run with a small sample size?
 add_complete_parent_relation: bool = False  # store complete git graph (by parent relation), or only parent-relation for relevant nodes?
 commit_limit: int = 10 ** 4  # max number of commits of a repository, we sample
 max_bucket_overspill = 1
@@ -110,7 +112,9 @@ def read_in_commits_from_stdout(process: subprocess.Popen) -> list[commit.Commit
 
 
 def get_any(s: set):
-    return next(iter(s))
+    if not s:
+        raise ValueError("Set is empty, no member to return.")
+    return random.choice(list(s))
 
 
 # Bucket for built-in Hash
@@ -238,7 +242,7 @@ def connect_parents(commits: list[commit.Commit], c_id_to_c: dict[str, commit.Co
 
 # remove all commits without a neighbor. they are a bit boring for our purposes
 def remove_single_commits(commits: list[commit.Commit]) -> list[commit.Commit]:
-    return [c for c in commits if c.neighbor_connections]
+    return [c for c in commits if c.edges]
 
 
 # give a report about our graph and its edges
@@ -247,9 +251,9 @@ def how_many_connections_are_known(commits: list[commit.Commit], folder: str) ->
     children: int = 0
     unknown: int = 0
     for c in commits:
-        picks += sum([1 for n in c.neighbor_connections if n.explicit_cherrypick])
-        children += sum([1 for n in c.neighbor_connections if n.is_child_of])
-        unknown += sum([1 for n in c.neighbor_connections if not (n.explicit_cherrypick or n.is_child_of)])
+        picks += sum([1 for n in c.edges if n.explicit_cherrypick])
+        children += sum([1 for n in c.edges if n.is_child_of])
+        unknown += sum([1 for n in c.edges if not (n.explicit_cherrypick or n.is_child_of)])
     print(f"{folder}: Known connections: picker->cherry {picks}, child->parent {children};  unknown: {unknown}")
 
 
@@ -257,7 +261,7 @@ def how_many_connections_are_known(commits: list[commit.Commit], folder: str) ->
 def commits_to_csv(commits: list[commit.Commit]) -> str:
     csv: str = ""
     for c in commits:
-        for cn in c.neighbor_connections:
+        for cn in c.edges:
             if c.is_younger_than(cn.neighbor):
                 csv += f"{c.commit_id},{cn.neighbor.commit_id},{cn.sim},{cn.bit_sim},{cn.patch_sim},{cn.explicit_cherrypick},{np.nan},{cn.is_child_of}\n"
     return csv
@@ -275,6 +279,12 @@ def save_graph(commits: list[commit.Commit], project_name: str) -> None:
 def remove_duplicate_commits(commits: list[commit.Commit]) -> list[commit.Commit]:
     seen = {}
     return [seen.setdefault(c.commit_id, c) for c in commits if c.commit_id not in seen]
+
+
+# prune new cherrypicks, that are actually weaker than the already known ones
+def prune_non_cherry_edges(commits: list[commit.Commit]) -> None:
+    for c in commits:
+        c.prune_non_cherry_edges()
 
 
 # main loop
@@ -305,8 +315,8 @@ def analyze_repo(folder: str, outer_commit_limit: int = commit_limit) -> list[co
 
     connect_similar_neighbors(buckets)
     connect_cherry_picks(commits, commit_id_to_commit, alt_id_to_commit)
-    # TODO: prune tree: weakest outgoing (non-explicit) edges
-    # TODO: prune tree: remove transitive edges pointing to same sink
+    prune_non_cherry_edges(commits)
+
     if add_complete_parent_relation:
         connect_parents(commits, commit_id_to_commit)
     else:

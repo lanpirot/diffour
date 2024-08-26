@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="added requirements.txt">
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="revamped test_commit.py">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/commit.py" afterDir="false" />
@@ -92,11 +92,14 @@
     "Python tests.Python tests for test_commit.Test.test_sim_hash_weighted.executor": "Run",
     "Python tests.Python tests for test_find_cherries.Test.executor": "Run",
     "Python tests.Python tests for test_find_cherries.Test.test_analyze_repo.executor": "Run",
+    "Python tests.Python tests for test_find_cherries.Test.test_get_any.executor": "Run",
+    "Python tests.Python tests for test_find_cherries.Test.test_get_branch_dict.executor": "Run",
     "Python tests.Python tests for test_find_cherries.Test.test_init_git.executor": "Run",
     "Python tests.Python tests for test_find_cherries.Test.test_main.executor": "Run",
     "Python tests.Python tests for test_find_cherries.Test.test_main_block.executor": "Debug",
+    "Python tests.Python tests for test_find_cherries.Test.test_parse_git_output.executor": "Run",
     "Python.__main__.executor": "Run",
-    "Python.find_cherries.executor": "Debug",
+    "Python.find_cherries.executor": "Run",
     "Python.main.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "main",
@@ -122,7 +125,7 @@
       </set>
     </option>
   </component>
-  <component name="RunManager" selected="Python tests.Python tests for test_commit.Test">
+  <component name="RunManager" selected="Python.find_cherries">
     <configuration name="find_cherries" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
@@ -160,7 +163,7 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Python tests for test_commit.Test.test_add_neighbor" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+    <configuration name="Python tests for test_find_cherries.Test" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -171,11 +174,11 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_commit.Test.test_add_neighbor&quot;" />
+      <option name="_new_target" value="&quot;test_find_cherries.Test&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Python tests for test_commit.Test.test_already_neighbors" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+    <configuration name="Python tests for test_find_cherries.Test.test_get_any" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -186,11 +189,11 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_commit.Test.test_already_neighbors&quot;" />
+      <option name="_new_target" value="&quot;test_find_cherries.Test.test_get_any&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Python tests for test_commit.Test.test_sign_commit_fine" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+    <configuration name="Python tests for test_find_cherries.Test.test_get_branch_dict" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -201,11 +204,11 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_commit.Test.test_sign_commit_fine&quot;" />
+      <option name="_new_target" value="&quot;test_find_cherries.Test.test_get_branch_dict&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Python tests for test_commit.Test.test_sign_hunk" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+    <configuration name="Python tests for test_find_cherries.Test.test_parse_git_output" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="diffour" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -216,32 +219,17 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_commit.Test.test_sign_hunk&quot;" />
-      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
-      <method v="2" />
-    </configuration>
-    <configuration name="Python tests for tests.test_find_cherries.Test" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
-      <module name="diffour" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;tests.test_find_cherries.Test&quot;" />
+      <option name="_new_target" value="&quot;test_find_cherries.Test.test_parse_git_output&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python tests.Python tests for test_find_cherries.Test" />
+        <item itemvalue="Python tests.Python tests for test_find_cherries.Test.test_get_any" />
+        <item itemvalue="Python tests.Python tests for test_find_cherries.Test.test_get_branch_dict" />
+        <item itemvalue="Python tests.Python tests for test_find_cherries.Test.test_parse_git_output" />
         <item itemvalue="Python tests.Python tests for test_commit.Test" />
-        <item itemvalue="Python tests.Python tests for test_commit.Test.test_add_neighbor" />
-        <item itemvalue="Python tests.Python tests for test_commit.Test.test_already_neighbors" />
-        <item itemvalue="Python tests.Python tests for test_commit.Test.test_sign_commit_fine" />
-        <item itemvalue="Python tests.Python tests for test_commit.Test.test_sign_hunk" />
       </list>
     </recent_temporary>
   </component>
@@ -260,14 +248,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1723569704733</updated>
-    </task>
-    <task id="LOCAL-00002" summary="paralellizing stuff">
-      <option name="closed" value="true" />
-      <created>1723636309369</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1723636309369</updated>
     </task>
     <task id="LOCAL-00003" summary="sim_hash-bit_masking integrated">
       <option name="closed" value="true" />
@@ -653,7 +633,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724437049407</updated>
     </task>
-    <option name="localTasksCounter" value="51" />
+    <task id="LOCAL-00051" summary="revamped test_commit.py">
+      <option name="closed" value="true" />
+      <created>1724584014137</created>
+      <option name="number" value="00051" />
+      <option name="presentableId" value="LOCAL-00051" />
+      <option name="project" value="LOCAL" />
+      <updated>1724584014137</updated>
+    </task>
+    <option name="localTasksCounter" value="52" />
     <servers />
   </component>
   <component name="Vcs.Log.History.Properties">
@@ -679,7 +667,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="after online git-outputstream processing!" />
     <MESSAGE value="added type hints everywhere" />
     <MESSAGE value="caught up the tests" />
     <MESSAGE value="added parent relation (not tested yet)" />
@@ -704,7 +691,8 @@
     <MESSAGE value="configured tests a bit better" />
     <MESSAGE value="better testing" />
     <MESSAGE value="added requirements.txt" />
-    <option name="LAST_COMMIT_MESSAGE" value="added requirements.txt" />
+    <MESSAGE value="revamped test_commit.py" />
+    <option name="LAST_COMMIT_MESSAGE" value="revamped test_commit.py" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -723,6 +711,11 @@
           <url>file://$PROJECT_DIR$/tests/test_commit.py</url>
           <line>303</line>
           <option name="timeStamp" value="344" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/commit.py</url>
+          <line>261</line>
+          <option name="timeStamp" value="357" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

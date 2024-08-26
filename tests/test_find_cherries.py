@@ -27,10 +27,10 @@ class Test(TestCase):
         end_time = time.time()
         self.assertTrue(end_time - start_time < 5)
         self.assertEqual(745, len(commits))
-        self.assertEqual(6, sum([len([n for n in c.neighbor_connections if n.is_child_of]) for c in commits]))
-        self.assertEqual(7, sum([len([n for n in c.neighbor_connections if not n.is_child_of and not n.explicit_cherrypick]) for c in commits]))
+        self.assertEqual(6, sum([len([n for n in c.edges if n.is_child_of]) for c in commits]))
+        self.assertEqual(7, sum([len([n for n in c.edges if not n.is_child_of and not n.explicit_cherrypick]) for c in commits]))
         self.assertEqual(sum([len(c.explicit_cherries) for c in commits]),
-                         sum([len([n for n in c.neighbor_connections if n.explicit_cherrypick]) for c in commits]))
+                         sum([len([n for n in c.edges if n.explicit_cherrypick]) for c in commits]))
 
         redo_command_string(add_complete_parent_relation=True)
         start_time = time.time()
@@ -38,10 +38,10 @@ class Test(TestCase):
         end_time = time.time()
         self.assertTrue(end_time - start_time < 5)
         self.assertEqual(874, len(commits))
-        self.assertEqual(1002, sum([len([n for n in c.neighbor_connections if n.is_child_of]) for c in commits]))
-        self.assertEqual(10, sum([len([n for n in c.neighbor_connections if not n.is_child_of and not n.explicit_cherrypick]) for c in commits]))
+        self.assertEqual(1002, sum([len([n for n in c.edges if n.is_child_of]) for c in commits]))
+        self.assertEqual(10, sum([len([n for n in c.edges if not n.is_child_of and not n.explicit_cherrypick]) for c in commits]))
         self.assertEqual(sum([len(c.explicit_cherries) for c in commits]),
-                         sum([len([n for n in c.neighbor_connections if n.explicit_cherrypick]) for c in commits]))
+                         sum([len([n for n in c.edges if n.explicit_cherrypick]) for c in commits]))
 
         redo_command_string(add_complete_parent_relation=False)
         start_time = time.time()
@@ -49,10 +49,10 @@ class Test(TestCase):
         end_time = time.time()
         self.assertTrue(end_time - start_time < 5)
         self.assertEqual(1000, len(commits))
-        self.assertEqual(600, sum([len([n for n in c.neighbor_connections if n.is_child_of]) for c in commits]))
-        self.assertEqual(896, sum([len([n for n in c.neighbor_connections if not n.is_child_of and not n.explicit_cherrypick]) for c in commits]))
+        self.assertEqual(600, sum([len([n for n in c.edges if n.is_child_of]) for c in commits]))
+        self.assertEqual(896, sum([len([n for n in c.edges if not n.is_child_of and not n.explicit_cherrypick]) for c in commits]))
         self.assertEqual(sum([len(c.explicit_cherries) for c in commits]),
-                         sum([len([n for n in c.neighbor_connections if n.explicit_cherrypick]) for c in commits]))
+                         sum([len([n for n in c.edges if n.explicit_cherrypick]) for c in commits]))
 
         redo_command_string(add_complete_parent_relation=True)
         start_time = time.time()
@@ -60,10 +60,10 @@ class Test(TestCase):
         end_time = time.time()
         self.assertTrue(end_time - start_time < 5)
         self.assertEqual(1000, len(commits))
-        self.assertEqual(991, sum([len([n for n in c.neighbor_connections if n.is_child_of]) for c in commits]))
-        self.assertEqual(896, sum([len([n for n in c.neighbor_connections if not n.is_child_of and not n.explicit_cherrypick]) for c in commits]))
+        self.assertEqual(991, sum([len([n for n in c.edges if n.is_child_of]) for c in commits]))
+        self.assertEqual(896, sum([len([n for n in c.edges if not n.is_child_of and not n.explicit_cherrypick]) for c in commits]))
         self.assertEqual(sum([len(c.explicit_cherries) for c in commits]),
-                         sum([len([n for n in c.neighbor_connections if n.explicit_cherrypick]) for c in commits]))
+                         sum([len([n for n in c.edges if n.explicit_cherrypick]) for c in commits]))
 
     def test_main(self):
         find_cherries.commit_limit = 10
@@ -98,16 +98,26 @@ class Test(TestCase):
         shutil.rmtree(tmp_dir)
 
     def test_parse_git_output(self):
-        pass
+        find_cherries.add_complete_parent_relation = False
+        self.assertEqual(745, len(find_cherries.parse_git_output(self.repo_folder + "pydriller")))
 
     def test_get_branch_dict(self):
-        pass
+        cwd = os.getcwd()
+        os.chdir(self.repo_folder + "pydriller")
+        branch_dict = find_cherries.get_branch_dict()
+        os.chdir(cwd)
+        self.assertEqual(874, len(branch_dict))
 
     def test_read_in_commits_from_stdout(self):
         pass
 
     def test_get_any(self):
-        pass
+        ts = set()
+        self.assertRaises(ValueError, find_cherries.get_any, ts)
+        maxi = 100
+        ts = {i for i in range(maxi)}
+        for _ in range(maxi):
+            self.assertTrue(0 <= find_cherries.get_any(ts) < maxi)
 
     def test_bucketize_buckets(self):
         pass
@@ -149,4 +159,10 @@ class Test(TestCase):
         pass
 
     def test_remove_duplicate_commits(self):
+        pass
+
+    def test_prune_weakest_non_cherry_edges(self):
+        pass
+
+    def test_prune_transitive_non_cherry_edges(self):
         pass

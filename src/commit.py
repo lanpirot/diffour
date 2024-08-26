@@ -167,12 +167,12 @@ class Commit:
         self.explicit_cherries: list = self.get_explicit_cherrypicks()
         self.parseable: bool = parseable
         if self.parseable:
-            self.patch_set: set[int] = self.signature_patch_set(patch_set)
-            self.commit_lsh_signature: int = sign_commit_rough(self.patch_set)
+            self.patch_set: set[int] = self.signature_patch_set_hunks(patch_set)
+            self.commit_lsh_signature: int = sign_commit_rough(self.patch_set)  # .union(self.signature_patch_set_lines(patch_set)))
             self.commit_fine_signature: int = sign_commit_fine(patch_set.__str__())
         else:
             self.patch_set, self.commit_lsh_signature, self.commit_fine_signature = None, None, None
-        self.neighbor_connections: set[Neighbor] = set()
+        self.edges: set[Edge] = set()
 
     # we use Jaccard-Similarity of Hunks of a Diff
     def is_similar_patch_to(self, neighbor: 'Commit') -> tuple[bool, Optional[float]]:
@@ -183,7 +183,7 @@ class Commit:
         return similarity >= min_patch_similarity, similarity
 
     def already_neighbors(self, other):
-        return other in [n.neighbor for n in self.neighbor_connections] or self in [n.neighbor for n in other.neighbor_connections] or self == other
+        return other in [n.neighbor for n in self.edges] or self in [n.neighbor for n in other.edges] or self == other
 
     # add a neighbor edge for our neighbor graph
     # we expect edges of type: strong similarity (bitwise, patch_sim), explicit cherrypick, git-parent-relation
@@ -191,10 +191,10 @@ class Commit:
         # we don't need to add a neighbor twice
         if self.already_neighbors(other):
             return
-        neighbor: Neighbor
+        neighbor: Edge
 
         if self.is_child_of(other):
-            neighbor = Neighbor(neighbor=other, sim=False, bit_sim=0, patch_sim=0, explicit_cherrypick=False, is_child_of=True)
+            neighbor = Edge(neighbor=other, sim=False, bit_sim=0, patch_sim=0, explicit_cherrypick=False, is_child_of=True)
         else:
             if patch_sim_given:
                 patch_sim, patch_sim_level = patch_sim_given
@@ -207,11 +207,11 @@ class Commit:
                 raise GitCommitOrderException
             else:
                 if is_similar or self.other_is_in_my_cherries(other):
-                    neighbor = Neighbor(neighbor=other, sim=is_similar, bit_sim=bit_sim_level, patch_sim=patch_sim_level,
-                                        explicit_cherrypick=self.other_is_in_my_cherries(other), is_child_of=False)
+                    neighbor = Edge(neighbor=other, sim=is_similar, bit_sim=bit_sim_level, patch_sim=patch_sim_level,
+                                    explicit_cherrypick=self.other_is_in_my_cherries(other), is_child_of=False)
                 else:
                     return
-        self.neighbor_connections.add(neighbor)
+        self.edges.add(neighbor)
 
     def is_child_of(self, other_commit: 'Commit') -> bool:
         return other_commit.commit_id in self.parent_ids
@@ -250,7 +250,7 @@ class Commit:
         return self, other_commit
 
     # break down patch_set into signatures of hunks
-    def signature_patch_set(self, patch_set: unidiff.PatchSet) -> set[int]:
+    def signature_patch_set_hunks(self, patch_set: unidiff.PatchSet) -> set[int]:
         ret = set()
         for patched_file in patch_set:
             file_name: str = patched_file.source_file + patched_file.target_file
@@ -262,11 +262,45 @@ class Commit:
                 ret = ret.union({sign_hunk(file_name + "\n" + get_hunk_string(hunk)) for hunk in patched_file})
         return ret
 
+    # break down patch_set into signatures of lines
+    # this is used for the rough signature
+    def signature_patch_set_lines(self, patch_set: unidiff.PatchSet) -> set[int]:
+        ret = set()
+        for patched_file in patch_set:
+            file_name: str = patched_file.source_file + patched_file.target_file
+            if patched_file.is_binary_file:
+                continue
+            else:
+                for hunk in patched_file:
+                    for line in get_hunk_string(hunk).splitlines():
+                        ret.add(sign_hunk(file_name + line))
+        return ret
 
-# Neighbor: a class for the edges of our Neighbor-Graph
+    def prune_non_cherry_edges(self):
+        # prune weakest non-cherry edges
+        ncs = sorted(self.edges, key=lambda x: (x.patch_sim, -x.neighbor.date) if x.patch_sim else (0, -x.neighbor.date))
+        weakest_cherry: Optional[int] = next((i for i, cn in enumerate(ncs) if cn.explicit_cherrypick), None)
+        if weakest_cherry:
+            self.edges = set(ncs[weakest_cherry:])
+
+        # prune non-cherry edges that are transitively obsolete
+        # keep only edges to earliest possible cherry
+        keep_edges = {nc for nc in self.edges if nc.explicit_cherrypick or nc.is_child_of}
+        maybe_edges = sorted([nc for nc in self.edges if not (nc.explicit_cherrypick or nc.is_child_of)],
+                             key=lambda x: (x.patch_sim, x.neighbor.date))
+        i: int = 0
+        while i < len(maybe_edges) - 1:
+            if maybe_edges[i].patch_sim == maybe_edges[i + 1].patch_sim and maybe_edges[i].bit_sim == maybe_edges[i + 1].bit_sim:
+                del maybe_edges[i + 1]
+                continue
+            i += 1
+        self.edges = keep_edges.union(set(maybe_edges))
+
+
+# Edge: a class for the edges of our Neighbor-Graph
 # used for the different edge types and edge weights
 @dataclass
-class Neighbor:
+class Edge:
     neighbor: Commit
     sim: bool
     bit_sim: float
@@ -276,9 +310,6 @@ class Neighbor:
 
     def __hash__(self) -> int:
         return hash(self.neighbor.commit_id)
-
-    def __eq__(self, item) -> bool:
-        return item == self.neighbor
 
 
 class GitCommitOrderException(Exception):
