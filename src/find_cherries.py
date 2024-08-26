@@ -9,8 +9,7 @@ import numpy as np
 import re
 from src import commit
 import time
-from joblib import Parallel, delayed
-
+from joblib import Parallel, delayed, wrap_non_picklable_objects
 
 # A program to seek cherrypicks in git repositories.
 # We find explicit cherrypicks (easy), and implicit cherrypicks (very hard).
@@ -37,7 +36,7 @@ save_folder: str = "cherry_data/"
 
 commit_marker: str = "====xxx_next_commit_xxx===="
 diff_marker: str = "####xxx_next_diff_xxx####"
-pretty_format: str = commit_marker + "%n%H%n%P%n%an%n%s%b%n" + diff_marker
+pretty_format: str = commit_marker + "%n%H%n%P%n%an%n%at%n%s%b%n" + diff_marker
 
 no_merges1: str = "" if add_complete_parent_relation else " --no-merges"
 no_merges2: str = " -m" if add_complete_parent_relation else ""
@@ -327,15 +326,14 @@ def analyze_repo(folder: str, outer_commit_limit: int = commit_limit) -> list[co
 
     how_many_connections_are_known(commits, sh_folder)
     save_graph(commits, sh_folder)
-    pass
     job_end_time: float = time.time()
     print(f"{sh_folder}: Execution time: {job_end_time - job_start_time:.1f} seconds")
     return commits
 
 
-# wrapper function, so big return values don't break Parallel
-def discard_return_value(*args, **kwargs) -> None:
-    analyze_repo(*args, **kwargs)
+@delayed
+def wrap_analyze_repo(repo: str, commit_limit: int = commit_limit) -> None:
+    analyze_repo(repo, commit_limit)
 
 
 def main() -> None:
@@ -345,7 +343,7 @@ def main() -> None:
 
     if full_sample:
         start_time: float = time.time()
-        Parallel(n_jobs=-1)(delayed(discard_return_value)(repo, commit_limit) for repo in subfolders)
+        Parallel(n_jobs=-1)(wrap_analyze_repo(repo, commit_limit) for repo in subfolders)
         end_time: float = time.time()
         print(f"Execution time: {end_time - start_time:.1f} seconds")
     else:

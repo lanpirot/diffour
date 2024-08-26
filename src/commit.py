@@ -83,8 +83,8 @@ def sign_hunk(hunk_str: str) -> int:
 
 
 # create a dummy cherry commit to populate the git graph with cherries we did not sample, but know of
-def dummy_cherry_commit(commit_id: str, parent_id: str = "", diff_marker: str = "marker", udiff: str = "") -> 'Commit':
-    return Commit(f"{commit_id}\n{parent_id}\nA. Nonymous\n!!Dummy Commit!!\n{diff_marker}\n{udiff}", diff_marker)
+def dummy_cherry_commit(commit_id: str, parent_id: str = "", date: int = 1, diff_marker: str = "marker", udiff: str = "") -> 'Commit':
+    return Commit(f"{commit_id}\n{parent_id}\nA. Nonymous\n{date}\n!!Dummy Commit!!\n{diff_marker}\n{udiff}", diff_marker)
 
 
 def get_hunk_string(hunk: unidiff.Hunk) -> str:
@@ -115,11 +115,11 @@ def parse_commit_str(commit_str: str, diff_marker: str):
         commit_str = commit_str[0].split(diff_marker)
         if len(commit_str) != 2:
             raise ValueError
-    commit_header: list[str] = commit_str[0].split("\n", 3)
+    commit_header: list[str] = commit_str[0].split("\n", 4)
 
     if len(commit_header) < 4:
         raise ValueError
-    (commit_id, parent_idstring, author, commit_message) = (commit_header[0], commit_header[1], commit_header[2], commit_header[3:][0])
+    (commit_id, parent_idstring, author, date, commit_message) = (commit_header[0], commit_header[1], commit_header[2], int(commit_header[3]), commit_header[4:][0])
     parent_ids: list[str] = parent_idstring.split(" ")
     parent_ids = [p for p in parent_ids if len(p) > 0]
 
@@ -137,21 +137,18 @@ def parse_commit_str(commit_str: str, diff_marker: str):
     except unidiff.UnidiffParseError:
         parseable = False
         patch_set = None
-    return commit_id, parent_ids, author, commit_message, patch_set, parseable
+    return commit_id, parent_ids, author, date, commit_message, patch_set, parseable
 
 
 # Commit: a class to store all information of a commit, we can gather from the git log parsing
 #         we also compute a rough, but locality sensitive signature of its udiff (and commit message for binary files) for SimHash
 #         and a fine hash of the whole diff
 class Commit:
-    _date_id: int = 2 ** bit_mask_length  # the cherrypicks are sorted by date, we give them an ID by our processing order
     branch_dict: dict[str, str] = dict()
 
     def __init__(self, commit_str: str, diff_marker: str) -> None:
-        self.date: int = self.__class__._date_id
-        self.__class__._date_id -= 1
 
-        (commit_id, parent_ids, author, commit_message, patch_set, parseable) = parse_commit_str(commit_str, diff_marker)
+        (commit_id, parent_ids, author, date, commit_message, patch_set, parseable) = parse_commit_str(commit_str, diff_marker)
 
         try:
             self.branch_id: str = self.branch_dict[commit_id]
@@ -160,6 +157,7 @@ class Commit:
         self.commit_id: str = commit_id
         self.parent_ids: list[str] = parent_ids
         self.author: str = author
+        self.date: int = date
         self.commit_message: str = commit_message
         self.is_root: bool = len(self.parent_ids) == 0
         self.alt_id: Optional[str] = self.get_alt_id()
@@ -204,8 +202,10 @@ class Commit:
             is_similar = bit_sim and patch_sim
 
             if other.other_is_in_my_cherries(self):
-                return
-                raise GitCommitOrderException
+                if self.date < other.date:
+                    raise GitCommitOrderException
+                else:
+                    return
             else:
                 if is_similar or self.other_is_in_my_cherries(other):
                     neighbor = Edge(neighbor=other, sim=is_similar, bit_sim=bit_sim_level, patch_sim=patch_sim_level,
