@@ -204,6 +204,7 @@ class Commit:
             is_similar = bit_sim and patch_sim
 
             if other.other_is_in_my_cherries(self):
+                return
                 raise GitCommitOrderException
             else:
                 if is_similar or self.other_is_in_my_cherries(other):

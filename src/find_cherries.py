@@ -11,6 +11,7 @@ from src import commit
 import time
 from joblib import Parallel, delayed
 
+
 # A program to seek cherrypicks in git repositories.
 # We find explicit cherrypicks (easy), and implicit cherrypicks (very hard).
 # Order of action:
@@ -332,6 +333,11 @@ def analyze_repo(folder: str, outer_commit_limit: int = commit_limit) -> list[co
     return commits
 
 
+# wrapper function, so big return values don't break Parallel
+def discard_return_value(*args, **kwargs) -> None:
+    analyze_repo(*args, **kwargs)
+
+
 def main() -> None:
     gc.collect()
     subfolders: list[str] = os.walk(repo_folder).__next__()[1]
@@ -339,7 +345,7 @@ def main() -> None:
 
     if full_sample:
         start_time: float = time.time()
-        Parallel(n_jobs=-1)(delayed(analyze_repo)(repo, commit_limit) for repo in subfolders)
+        Parallel(n_jobs=-1)(delayed(discard_return_value)(repo, commit_limit) for repo in subfolders)
         end_time: float = time.time()
         print(f"Execution time: {end_time - start_time:.1f} seconds")
     else:
