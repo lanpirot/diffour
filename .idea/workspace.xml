@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="safe again">
+    <list default="true" id="826a97a0-2ac7-4dcb-822f-2b3333e5d871" name="Changes" comment="new date directly from commit">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/commit.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/commit.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/find_cherries.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/find_cherries.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -96,7 +95,7 @@
     "Python tests.Python tests for test_find_cherries.Test.test_main_block.executor": "Debug",
     "Python tests.Python tests for test_find_cherries.Test.test_parse_git_output.executor": "Run",
     "Python.__main__.executor": "Run",
-    "Python.find_cherries.executor": "Debug",
+    "Python.find_cherries.executor": "Run",
     "Python.main.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "main",
@@ -245,14 +244,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1723569704733</updated>
-    </task>
-    <task id="LOCAL-00004" summary="better hash function">
-      <option name="closed" value="true" />
-      <created>1723643449947</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1723643449947</updated>
     </task>
     <task id="LOCAL-00005" summary="added shingle mingling">
       <option name="closed" value="true" />
@@ -638,7 +629,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724690413781</updated>
     </task>
-    <option name="localTasksCounter" value="53" />
+    <task id="LOCAL-00053" summary="new date directly from commit">
+      <option name="closed" value="true" />
+      <created>1724693368283</created>
+      <option name="number" value="00053" />
+      <option name="presentableId" value="LOCAL-00053" />
+      <option name="project" value="LOCAL" />
+      <updated>1724693368283</updated>
+    </task>
+    <option name="localTasksCounter" value="54" />
     <servers />
   </component>
   <component name="Vcs.Log.History.Properties">
@@ -664,7 +663,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="caught up the tests" />
     <MESSAGE value="added parent relation (not tested yet)" />
     <MESSAGE value="added tons of comments" />
     <MESSAGE value="removed some unncessary comments" />
@@ -689,7 +687,8 @@
     <MESSAGE value="added requirements.txt" />
     <MESSAGE value="revamped test_commit.py" />
     <MESSAGE value="safe again" />
-    <option name="LAST_COMMIT_MESSAGE" value="safe again" />
+    <MESSAGE value="new date directly from commit" />
+    <option name="LAST_COMMIT_MESSAGE" value="new date directly from commit" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -713,6 +712,11 @@
           <url>file://$PROJECT_DIR$/src/commit.py</url>
           <line>205</line>
           <option name="timeStamp" value="361" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/commit.py</url>
+          <line>297</line>
+          <option name="timeStamp" value="363" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

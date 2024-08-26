@@ -279,13 +279,13 @@ class Commit:
 
     def prune_non_cherry_edges(self):
         # prune weakest non-cherry edges
-        ncs = sorted(self.edges, key=lambda x: (x.patch_sim, -x.neighbor.date) if x.patch_sim else (0, -x.neighbor.date))
+        ncs = sorted(self.edges, key=lambda x: (x.patch_sim, -x.neighbor.date, x.explicit_cherrypick) if x.patch_sim else (0, -x.neighbor.date, x.explicit_cherrypick))
         weakest_cherry: Optional[int] = next((i for i, cn in enumerate(ncs) if cn.explicit_cherrypick), None)
         if weakest_cherry:
             self.edges = set(ncs[weakest_cherry:])
 
         # prune non-cherry edges that are transitively obsolete
-        # keep only edges to earliest possible cherry
+        # keep only edges to the earliest possible commit (implicit cherry)
         keep_edges = {nc for nc in self.edges if nc.explicit_cherrypick or nc.is_child_of}
         maybe_edges = sorted([nc for nc in self.edges if not (nc.explicit_cherrypick or nc.is_child_of)],
                              key=lambda x: (x.patch_sim, x.neighbor.date))
